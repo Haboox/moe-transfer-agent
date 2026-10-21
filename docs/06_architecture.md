@@ -19,7 +19,7 @@ passes a guard; eligibility comes only from deterministic rules; anything the ru
 | Language | Reply language decided by code from the parent's words; Arabic text helpers (digits, names, grades) | `agent/language.py` | No |
 | **Interpret** | Intent classification (intent, confidence, grade, override attempt, language) | `agent/agent.py::_interpret`, `agent/prompts.py` | Yes |
 | **Interpret** | Agent loop: chooses the next tool, writes conversational replies | `agent/agent.py::_act_loop` | Yes |
-| Model access | One interface, three providers: local Ollama (default), Claude API, scripted (no AI) | `agent/llm.py` | Provider |
+| Model access | One interface, four providers: local Ollama (default), a hosted model behind the OpenAI style API (the online copy), Claude API, scripted (no AI); plus a simulated compromised model for attack tests | `agent/llm.py` | Provider |
 | **Act** | Tool registry: the only actions, each with a parameter contract and a documented basis | `agent/tools.py` | No |
 | **Act** | Guard: allow list, contract check, prerequisites, grounded escalation | `agent/guard.py` | No |
 | **Act** | Executor: time limit, one retry, contract validation of responses | `agent/executor.py` | No |
@@ -107,6 +107,8 @@ in the language they write in.
 | Wrong grade before any tool (P-06) | Grade 1 or Grade 12 cases entering the wrong service | `agent.py` | `test_out_of_range_grades_are_answered_before_any_tool`, S9, S10 |
 | Test cards only, details dropped (P-12) | Real card charged, card number in logs | `payments.py`, `mocks.py` | `test_card_checks`, `test_card_details_never_reach_the_log_or_the_model` |
 | Documents always checked (P-13) | An injection in the message making the model stop before checking a genuine parent's documents | `agent.py` | `test_injection_cannot_stop_the_documents_being_checked`, live S4 |
+| Instructions inside documents shown (P-05) | An injection hidden in a certificate going unnoticed (it is passed to the model only as labelled data; this check makes it visible in the trace and the audit log, and changes no rule) | `facts.py`, `tools.py` | `test_instructions_hidden_in_a_document_are_shown_and_logged_but_change_nothing` |
+| Compromised model refused | A model that obeys the injection (approve, pay nothing, submit, false escalation, "approved" reply) | `guard.py`, `output_guard.py`; selectable as "Compromised AI" in Demo controls | S4-ADV, S6-ADV, `test_the_compromised_ai_option_shows_the_guard_refusing_every_attack` |
 
 ## 6. Integrations (mocked here, real in production)
 
@@ -130,13 +132,19 @@ Timeouts are real waits: the mock hangs (`MOCK_HANG_SECONDS`) and the executor s
   security events (override attempts), human decisions, model context usage.
 * Masking happens before writing: document numbers keep only their last two characters, names, emails
   and phone numbers are replaced. Tests check every scenario's log and replies for leaks.
+* On screen, the **agent trace** (Demo controls, "Show how the agent decides") marks every step with the case study's
+  four responsibilities: Interpret (the model, with its confidence), Validate (rules engine and deterministic checks,
+  no AI), Act (a mock tool through the guard, with retries shown) and Approve (a person). Next to it a **security
+  panel** counts, for the session, the tool calls the guard refused, override attempts, instructions found inside
+  documents, model replies blocked, system failures and recoveries, and checks the replies and the log for every
+  document number and name of the applicants involved (it shows "none" with the number of values checked).
 
 ## 8. Deployment of the prototype
 
 | Item | Choice | Why |
 |---|---|---|
 | Model | `qwen3:8b` on Ollama, local, thinking off, 8,192 token context | Free, nothing leaves the machine, measured best of two local models on this agent's tasks |
-| Switch model | `LLM_PROVIDER` in `.env` (ollama, anthropic, scripted) | One setting, no code change |
+| Switch model | `LLM_PROVIDER` in `.env` (ollama, hosted, anthropic, scripted), or Demo controls on the page | One setting, no code change |
 | App | Streamlit, bound to localhost, usage statistics off | Simple, Python only |
 | Look | Light theme follows the moe.gov.ae service page (logo, gold bar, gold buttons); dark theme for presenting; Arabic page right to left in Noto Kufi Arabic | Familiar to Ministry users; Arabic first-class |
 | Fonts | Bundled in `static/fonts` (SIL Open Font License) | Works with no internet at the venue |

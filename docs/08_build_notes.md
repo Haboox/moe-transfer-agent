@@ -3,6 +3,60 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.16: language switch fixed, the brief's scenarios built into Demo controls, security shown (22 October)
+
+Found by using the portal: **switching the page language part way through a request crashed it** ("KeyError: 'None'").
+Streamlit keeps a keyed choice as its label text; after the switch, the English label "None" came back as the chosen
+system problem and the restart failed. Looking for the same kind of fault elsewhere found two more:
+
+* The Parent | Staff switch and the staff portal's case list filter could receive the old language's label the same
+  way. Every control whose words change with the language now gets fresh keys for each language visit and is filled
+  from the session's own value; every setting is checked before use, and a stale or unknown value falls back
+  (no crash, tested with "None", empty, unknown and numeric values).
+* **Switching the language (or the view) while the assistant was thinking lost its reply and left the message box
+  disabled.** In Streamlit 1.65 any read or write of the session state is a point where a click can stop the run, and
+  the default "fast reruns" start a second run beside the one still answering. Now a click waits for the answer
+  (`runner.fastReruns = false`), and the message, the reply and the busy flag are handled through plain references,
+  with no Streamlit call between taking the message and keeping the reply.
+
+Behaviour change: **a request under way continues in the other language** (conversation, documents, payment and case
+kept; the library stays with the edition already attached, so the same document is never offered twice in two
+languages). A page with nothing done yet reopens in the other language as before. The audit trail records the switch.
+
+Read the case study again word for word and closed what was still only described:
+
+* **The six mandatory scenarios carry the brief's names** in Demo controls ("Scenario 5 · Backend failure, timeout,
+  bad response"), with what each synthetic case contains underneath, and a short "how to show it" for the one running.
+* **Scenario 5 sets its problem at once** (document verification times out once, then recovers) and lists every
+  backend problem right under it: a timeout, a server error or a bad response, once (the retry recovers) or every
+  time (nothing is guessed; the case goes to an officer).
+* **Any mocked system can fail in any of those six ways** (section 3: document verification, identity, payment, case
+  management). All 24 combinations are tested: once always recovers and submits; verification or identity every time
+  goes to an officer as "system unavailable"; payment or case management every time tells the parent plainly and
+  submits nothing.
+* **The agent trace looks like the brief's console:** each step is marked Interpret (the model, confidence logged),
+  Validate (rules engine or a deterministic check, no AI), Act (a mock tool through the guard, "retried once,
+  succeeded" shown) or Approve (a person), with a legend.
+* **Security demonstrated, not described:** a panel counts, for the session, tool calls refused by the guard, override
+  attempts, instructions found inside documents, model replies blocked, failures and recoveries, and checks every reply
+  and the audit log for each document number and name of the applicants involved ("none, N values checked now").
+  The instruction hidden in Scenario 4's certificate is now flagged in the trace and the audit log (it was always
+  passed to the model only as labelled data; the flag changes no rule). Scenarios 4 and 6 offer the attack message as
+  a suggestion ready to tap, and **Compromised AI** in the model list is a model that obeys any injection: the guard and
+  the reply check refuse every step it tries (approve, pay nothing, submit, false escalation, "approved" reply).
+* Mocks are labelled where the parent meets them: the greeting says the UAE Pass sign in is simulated, and the payment
+  window is titled "(simulated)".
+* **A page reload no longer empties the staff portal:** the page address carries the demonstration
+  (`?run=...&lang=...&theme=...`), so reloading keeps the case list, its audit trails, the language and the look; the
+  parent's chat starts again. "Clear all cases" starts a new run. A strange address starts a clean demonstration.
+
+Browser checks (local, no AI): the language switched four times in the middle of a request (chat kept), with Demo controls open, in
+the open test with a nationality, on the staff screen, after dark mode, and while the assistant was answering
+(reply kept, message box usable); Scenario 5 picked and run in both languages; a reload in the middle of a demonstration; phone width.
+
+Results (no AI, repeatable): 588 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations
+(449 turns, no crash, no problem). Ruff (errors) and bandit (no medium or high issue) clean.
+
 ## Version 2.15: AI allowance shown live, backup model, full test round (21 October, late)
 
 * **When is the AI back?** Demo controls now shows the hosted model's live state next to "AI model": "Ready, about N

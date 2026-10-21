@@ -62,6 +62,7 @@ submission, officer referral) and says so in the reply.
 * Free model tiers limit tokens per minute and per day. One full parent session (question, documents, payment) uses
   about 12 model calls and 25,000 tokens (measured on the local logs). When a limit is reached the portal waits as
   the service asks (up to 30 seconds at a time) instead of failing.
-* Each browser visit has its own case list (as locally), kept until the app restarts.
+* Each demonstration has its own case list (as locally), kept until the app restarts. The page address carries it
+  (`?run=...`), so reloading the page keeps the cases, the language and the look (the access code is asked again).
 * The model in **Demo controls** can be switched to "No AI (scripted planner)" at any time if the hosted model is
   unavailable: the rules, documents, payment and staff portal still work.

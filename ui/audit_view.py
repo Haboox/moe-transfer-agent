@@ -34,6 +34,8 @@ POLICY = {
                               "أُغلقت نافذة الدفع: مستندات جديدة ويجب إعادة الفحص"),
     "model_reminded": ("model reminded to finish the standard steps", "تذكير النموذج بإكمال الخطوات المعتادة"),
     "security_event": ("manipulation attempt detected", "رُصدت محاولة تلاعب"),
+    "document_instructions_ignored": ("instructions to the AI found inside a document: treated as data and ignored",
+                                      "تعليمات موجهة للذكاء الاصطناعي داخل مستند: عوملت كبيانات وتم تجاهلها"),
     "card_silent_topic": ("topic not covered by the card: toll-free number given", "موضوع لا تغطيه البطاقة: أُعطي الرقم المجاني"),
     "upload_refused_case_closed": ("upload refused: case already closed", "رُفض الإرفاق: الطلب مغلق"),
     "intent_corrected": ("AI reading corrected by code", "صُحح فهم النموذج بواسطة الشيفرة"),
@@ -72,6 +74,11 @@ def describe(e: dict, lang: str) -> str:
     if ev == "document_uploaded":
         doc = DOC.get(d.get("doc_type"), (d.get("doc_type"), d.get("doc_type")))[k]
         return (f"أرفق ولي الأمر {doc}" if ar else f"Parent attached the {doc}") + f" ({d.get('file_format')}, {d.get('size_mb')} MB)"
+    if ev == "portal_language_changed":
+        to = "العربية" if d.get("portal_language") == "ar" else "الإنجليزية"
+        return (f"حوّل ولي الأمر الصفحة إلى {to} (يستمر الطلب)" if ar else
+                f"Parent switched the page to {'Arabic' if d.get('portal_language') == 'ar' else 'English'} "
+                "(the request continues)")
     if ev == "document_removed":
         return "أزال ولي الأمر مستنداً مرفقاً" if ar else "Parent removed an attached document"
     if ev == "intent_interpreted" and "no model call" in (e.get("basis") or ""):

@@ -94,6 +94,14 @@ class ServiceAgent:
         return self.ctx.state
 
     # ------------------------------------------------------------------ customer actions
+    def set_portal_language(self, lang: str) -> None:
+        """The parent switched the page language part way through. The request and the conversation continue; only
+        the default language for messages without words changes (replies follow the language the parent writes in)."""
+        lang = "ar" if lang == "ar" else "en"
+        if lang != self.state.ui_lang:
+            self.state.ui_lang = lang
+            self.ctx.audit.log("customer", "portal_language_changed", basis="customer input", portal_language=lang)
+
     def refresh_status(self) -> None:
         """Read the case status from case management (an officer's decision is shown to the parent at once)."""
         self._sync_case()
@@ -115,7 +123,7 @@ class ServiceAgent:
         if s.status in (CaseStatus.AWAITING_CUSTOMER, CaseStatus.AWAITING_PAYMENT):
             s.status = CaseStatus.IN_PROGRESS
         self.ctx.audit.log("customer", "document_removed", basis="customer input", doc_id=doc_id)
-        self.ctx.add_trace("Customer removed a file", doc_id)
+        self.ctx.add_trace("Customer removed a file", doc_id, lane="input")
         return True
 
     def upload(self, doc_ids: Iterable[str]) -> list[str]:
@@ -126,7 +134,8 @@ class ServiceAgent:
             # a submitted or escalated case is not changed by new files; the decision uses what was checked
             self.ctx.audit.log("policy", "upload_refused_case_closed", basis="case already " + s.status.value,
                                doc_ids=doc_ids)
-            self.ctx.add_trace("Upload not added", f"case {s.case_ref} is already {s.status.value}", "block")
+            self.ctx.add_trace("Upload not added", f"deterministic check: case {s.case_ref} is already {s.status.value}",
+                               "block", lane="validate")
             return added
         available = {d["doc_id"]: d for d in self.backend.persona_documents(s.persona_id)}
         for doc_id in doc_ids:
@@ -148,7 +157,7 @@ class ServiceAgent:
                 s.payment_request = None
             if s.status in (CaseStatus.AWAITING_CUSTOMER, CaseStatus.AWAITING_PAYMENT):
                 s.status = CaseStatus.IN_PROGRESS
-            self.ctx.add_trace("Customer uploaded", ", ".join(added))
+            self.ctx.add_trace("Customer uploaded", ", ".join(added), lane="input")
         return added
 
     # ------------------------------------------------------------------ one turn
@@ -207,7 +216,7 @@ class ServiceAgent:
             # the customer corrected themselves ("sorry, I meant Grade 6") or sent documents: back to this service
             s.status, s.scope_grade = CaseStatus.IN_PROGRESS, None
             ctx.audit.log("policy", "redirect_withdrawn", basis="customer input; P-06", intent=intent["intent"])
-            ctx.add_trace("Back to this service", "the customer's new message is not about Grade 12")
+            ctx.add_trace("Back to this service", "the customer's new message is not about Grade 12", lane="interpret")
 
         # P-06: a confident request for a grade this service does not cover -> redirect before using any tools.
         # Grade 12 has its own service; Grade 1 (or above 12) is outside Grades 2 to 11 (Card: About this service).
@@ -226,7 +235,8 @@ class ServiceAgent:
             policy_reply = redirect_message(lang_of(s), out_grade)
             ctx.audit.log("policy", "redirected_wrong_service", basis="P-06; R-01", intent=intent["intent"],
                           stated_grade=out_grade)
-            ctx.add_trace("Redirected (P-06)", f"Grade {out_grade} is outside this service (Grades 2 to 11)", "rule")
+            ctx.add_trace("Redirected (P-06)", f"deterministic check: Grade {out_grade} is outside this service (Grades 2 to 11)",
+                          "rule", lane="validate")
 
         if policy_reply is None and not added and (is_clock_question(text) or is_off_topic(text)):
             # P-17: the model has no clock and no internet; it invented "10:45 AM" live. The time comes from this
@@ -254,7 +264,8 @@ class ServiceAgent:
             if s.case_ref:
                 policy_reply += "\n\n" + status_message(s)
             ctx.audit.log("policy", "person_contact_given", basis="P-09; Card: Support (toll-free number)")
-            ctx.add_trace("Asked for a person (P-09)", "toll-free number given; no case created or referred", "rule")
+            ctx.add_trace("Asked for a person (P-09)", "fixed reply: toll-free number given; no case created or referred",
+                          "rule", lane="validate")
 
         final_text, llm_failed = "", False
         if policy_reply is None and not quick:
@@ -370,7 +381,8 @@ class ServiceAgent:
         elif problems:
             ctx.audit.log("policy", "reply_replaced", basis="P-04", problems=problems)
             if any("claims" in p or "reference" in p for p in problems):
-                ctx.add_trace("Reply blocked (P-04)", "; ".join(problems), "block")
+                ctx.stats["replies_blocked"] += 1
+                ctx.add_trace("AI reply blocked (P-04)", "reply check: " + "; ".join(problems), "block", lane="interpret")
 
         if "requirements_from_card" not in problems:
             s.last_topics = []
@@ -398,13 +410,14 @@ class ServiceAgent:
         except CardError as e:
             ctx.audit.log("customer", "payment_declined", basis="Card: Service Process step 3 (MOCK gateway)",
                           method=method, reason=e.code)
-            ctx.add_trace("Payment not completed", f"{method}: {e.code}", "warn")
+            ctx.add_trace("Payment not completed", f"mock payment gateway, {method}: {e.code}", "warn")
             return False, e.code
         s.receipt, s.payment_request, s.status = receipt, None, CaseStatus.IN_PROGRESS
         ctx.audit.log("customer", "payment_completed", basis="Card: Fees; Service Process step 3 (MOCK gateway)",
                       receipt_id=receipt.receipt_id, amount_aed=receipt.amount_aed, method=receipt.method,
                       card_last4=receipt.card_last4)
-        ctx.add_trace(f"Payment completed -> {receipt.receipt_id}", f"{receipt.method}, AED {receipt.amount_aed}, SIMULATED", "ok")
+        ctx.add_trace(f"Payment completed -> {receipt.receipt_id}",
+                      f"mock payment gateway, {receipt.method}, AED {receipt.amount_aed}, SIMULATED", "ok")
         return True, "paid"
 
     # ------------------------------------------------------------------ internals
@@ -442,7 +455,8 @@ class ServiceAgent:
             if result.get("status") in ("blocked", "failed"):
                 break
         if acted:
-            self.ctx.add_trace("Documents processed by policy (P-13)", "the model stopped early; same tools and guard", "rule")
+            self.ctx.add_trace("Documents processed by policy (P-13)", "the model stopped early; same tools and guard",
+                               "rule", lane="act")
         return acted
 
     def _grade_hint(self, intent: dict) -> Optional[int]:
@@ -477,7 +491,10 @@ class ServiceAgent:
         if rec and rec.status != s.status:
             self.ctx.audit.log("system", "case_status_refreshed", basis="MOCK case management",
                                case_ref=s.case_ref, old=s.status.value, new=rec.status.value)
-            self.ctx.add_trace(f"Case {s.case_ref}: {rec.status.value}", "updated by case management")
+            decided = rec.status in (CaseStatus.HUMAN_APPROVED, CaseStatus.HUMAN_REJECTED)
+            self.ctx.add_trace(f"Case {s.case_ref}: {rec.status.value}",
+                               "officer's decision, from case management" if decided else "updated by case management",
+                               "ok" if decided else "info", lane="approve" if decided else "act")
             s.status = rec.status
 
     def _interpret(self, user_content: str) -> dict:
@@ -513,11 +530,13 @@ class ServiceAgent:
             intent["intent"] = "unclear"
         self.state.last_intent = intent
         ctx.audit.log("model", "intent_interpreted", basis="model, confidence logged", **intent)
-        ctx.add_trace(f"Intent: {intent['intent']}", f"model, confidence {intent['confidence']:.2f}")
+        ctx.add_trace(f"Intent: {intent['intent']}", f"model, confidence {intent['confidence']:.2f} logged", lane="interpret")
         if intent["asks_to_override_rules"]:
             ctx.audit.log("policy", "security_event", basis="P-05",
                           note="customer asked to bypass rules or claimed authority; rules unchanged")
-            ctx.add_trace("Override attempt detected (P-05)", "logged; rules unchanged", "block")
+            ctx.stats["override_attempts"] += 1
+            ctx.add_trace("Override attempt detected (P-05)", "deterministic check: logged; rules unchanged", "block",
+                          lane="validate")
         return intent
 
     def _act_loop(self, user_content: str, intent: dict) -> tuple[str, bool]:
@@ -543,9 +562,9 @@ class ServiceAgent:
                     ctx.audit.log("policy", "context_near_limit", basis="OLLAMA_NUM_CTX",
                                   prompt_tokens=reply.prompt_tokens, context_limit=reply.context_limit)
                     ctx.add_trace("Warning: model context nearly full",
-                                  f"{reply.prompt_tokens}/{reply.context_limit} tokens", "warn")
+                                  f"{reply.prompt_tokens}/{reply.context_limit} tokens", "warn", lane="interpret")
             if reply is None:
-                ctx.add_trace("Model unavailable", "fell back to the case record", "error")
+                ctx.add_trace("Model unavailable", "fell back to the case record", "error", lane="interpret")
                 return "", True
             if not reply.tool_calls:
                 if self._documents_pending() and not nudged:

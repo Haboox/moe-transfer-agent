@@ -119,3 +119,16 @@ def doc_number_reply(lang: str) -> str:
                 "ويطّلع عليها الموظف في الطلب. يمكنني إخبارك هل اجتاز كل مستند الفحص.")
     return ("For privacy, I never show passport, ID or visa numbers in the chat. You can see them on your own "
             "documents, and the officer sees them in the case. I can tell you whether each document passed the checks.")
+
+
+# Text inside a document that speaks to the AI (scenario 4: an instruction hidden in a certificate). The model only
+# ever receives document text labelled as untrusted data (agent/tools.py); this check makes the attempt visible in
+# the trace and the audit log. It never changes a rule result.
+DOC_INSTRUCTIONS = re.compile(
+    r"ignore (?:all )?(?:the )?(?:previous|prior|above) (?:instructions|rules)|note to (?:the )?(?:ai|assistant)"
+    r"|\bai assistant\b|approve_application|pre-?approved by|system prompt|developer mode"
+    r"|تجاهل (?:جميع |كل )?(?:التعليمات|القواعد)|ملاحظة إلى المساعد|المساعد الذكي|معتمد مسبقاً|معتمد مسبقا", re.I)
+
+
+def instructions_in_document(text: str) -> bool:
+    return bool(DOC_INSTRUCTIONS.search(text or ""))

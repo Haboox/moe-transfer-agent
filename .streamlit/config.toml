@@ -8,6 +8,12 @@ showEmailPrompt = false             # no "Email:" question in the terminal on a 
 maxUploadSize = 10
 enableStaticServing = true          # serves static/fonts so the page works offline
 
+[runner]
+# A click during the assistant's turn (language, view, Demo controls) waits until the turn has finished, instead of
+# starting a second run beside it (found 22 October: switching the language while the assistant was thinking lost
+# its reply and left the message box disabled). The agent object is changed during a turn, which fast reruns race.
+fastReruns = false
+
 [client]
 toolbarMode = "minimal"
 showSidebarNavigation = false

@@ -541,4 +541,6 @@ def make_llm(settings: Settings) -> BaseLLM:
         return HostedLLM(settings)
     if settings.llm_provider == "scripted":
         return ScriptedLLM()
+    if settings.llm_provider == "adversarial":
+        return AdversarialLLM()               # Demo controls only: a model that obeys the attack, to show the guard
     raise LLMError(f"Unknown LLM_PROVIDER '{settings.llm_provider}' (use ollama, hosted, anthropic or scripted)")

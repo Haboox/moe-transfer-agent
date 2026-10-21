@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import rules
 from .config import (MOE_SUPPORT_NUMBER, SERVICE_CARD_URL, SERVICE_FEE_AED, SERVICE_NAME)
 from .executor import AgentContext, ToolFailure, call_backend
+from .facts import instructions_in_document
 from .models import (ApplicantProfile, CaseRecord, CaseStatus, Outcome, PaymentReceipt, PaymentRequest,
                      RuleStatus, VerificationResult)
 from .redact import mask_number, redact_text
@@ -103,7 +104,7 @@ def _profile(ctx: AgentContext, _: NoArgs) -> dict:
                               st.given_name_ar, st.family_name_ar,
                               f"{st.given_name_ar} {st.family_name_ar}" if st.given_name_ar else "")
     gcc = rules.is_gcc(st.nationality)
-    ctx.add_trace("get_applicant_profile() -> found", "MOCK identity system")
+    ctx.add_trace("get_applicant_profile() -> found", "mock tool (identity, UAE Pass)")
     return {"status": "ok", "student_ref": st.student_ref,
             "nationality": st.nationality, "gcc_national": gcc,
             "uae_visa_required": not gcc}
@@ -150,7 +151,14 @@ def _verify(ctx: AgentContext, args: VerifyArgs) -> dict:
             s.verifications[doc_id] = v
             s.failed_verifications.pop(doc_id, None)
             results.append(_summarise_verification(v))
-            ctx.add_trace(f"verify_document({doc_id}) -> {v.authenticity}", "MOCK verification service")
+            ctx.add_trace(f"verify_document({doc_id}) -> {v.authenticity}", "mock tool (document verification)")
+            if instructions_in_document(v.extracted_text):
+                # P-05, shown and logged: text addressed to the AI inside a document is data, never an instruction
+                ctx.stats["doc_instructions"] += 1
+                ctx.audit.log("policy", "document_instructions_ignored", basis="P-05: document text is data",
+                              doc_id=doc_id)
+                ctx.add_trace(f"Instructions to the AI inside {doc_id}", "deterministic check: treated as data, "
+                              "ignored (P-05)", "block", lane="validate")
         except ToolFailure as f:
             s.failed_verifications[doc_id] = f.outcome
             results.append({"doc_id": doc_id, "status": "failed", "error": f.outcome})
@@ -179,10 +187,12 @@ def _evaluate(ctx: AgentContext, _: NoArgs) -> dict:
     ctx.audit.log("rules", "rules_evaluated", basis="agent/rules.py",
                   outcome=report.outcome.value,
                   results={r.rule_id: r.status.value for r in report.results})
-    ctx.add_trace(f"Rules -> {report.outcome.value}",
-                  ", ".join(f"{r.rule_id} {r.status.value}" for r in report.results
-                            if r.status not in (RuleStatus.PASS, RuleStatus.NOT_APPLICABLE)) or "all passed",
-                  "rule")
+    span = f" {report.results[0].rule_id} to {report.results[-1].rule_id}" if report.results else ""
+    ctx.add_trace(f"Rules{span} -> {report.outcome.value}",
+                  "rule engine, no AI: " + (", ".join(f"{r.rule_id} {r.status.value}" for r in report.results
+                                                      if r.status not in (RuleStatus.PASS, RuleStatus.NOT_APPLICABLE))
+                                            or "all passed"),
+                  "rule", lane="validate")
     return {"status": "ok", "outcome": report.outcome.value,
             "problems": [{"rule": r.rule_id, "status": r.status.value, "detail": r.detail}
                          for r in report.results
@@ -200,7 +210,7 @@ def _pay(ctx: AgentContext, _: NoArgs) -> dict:
             lambda: ctx.backend.payment_open(s.session_id, SERVICE_FEE_AED), PaymentRequest,
             basis="Card: Fees; Service Process step 3")
         s.payment_request, s.status = req, CaseStatus.AWAITING_PAYMENT
-        ctx.add_trace("request_payment() -> payment window opened", f"AED {req.amount_aed}, SIMULATED", "ok")
+        ctx.add_trace("request_payment() -> payment window opened", f"mock tool, AED {req.amount_aed}, SIMULATED", "ok")
         return {"status": "awaiting_customer_payment", "payment_id": req.payment_id, "amount_aed": req.amount_aed,
                 "note": "The customer pays in the payment window. Tell them to complete the payment there."}
     receipt: PaymentReceipt = call_backend(
@@ -208,7 +218,7 @@ def _pay(ctx: AgentContext, _: NoArgs) -> dict:
         lambda: ctx.backend.payment_charge(s.session_id, SERVICE_FEE_AED), PaymentReceipt,
         basis="Card: Fees; Service Process step 3; A-10")
     s.receipt = receipt
-    ctx.add_trace(f"request_payment() -> {receipt.status}", f"AED {receipt.amount_aed}, SIMULATED")
+    ctx.add_trace(f"request_payment() -> {receipt.status}", f"mock tool, AED {receipt.amount_aed}, SIMULATED")
     return {"status": "ok", "receipt_id": receipt.receipt_id, "amount_aed": receipt.amount_aed,
             "note": "Payment received."}
 
@@ -262,7 +272,8 @@ def _escalate(ctx: AgentContext, args: EscalateArgs) -> dict:
             rule_summary=_rule_summary(s), **_case_facts(s)),
         CaseRecord, basis=f"escalation: {args.reason_code}")
     s.case_ref, s.status, s.escalation_reason = rec.case_ref, CaseStatus.PENDING_HUMAN_REVIEW, args.reason_code
-    ctx.add_trace(f"escalate_to_human() -> {rec.case_ref}", f"reason: {args.reason_code}", "escalate")
+    ctx.add_trace(f"escalate_to_human() -> {rec.case_ref}", f"a person decides; reason: {args.reason_code}",
+                  "escalate", lane="approve")
     return {"status": "ok", "case_ref": rec.case_ref, "case_status": rec.status.value,
             "note": "A staff member will review and decide. The agent cannot decide this case."}
 

@@ -30,7 +30,7 @@ from agent.mocks import CaseStore
 from agent.models import CaseStatus
 from ui.audit_view import actor, describe
 from ui.i18n import reason, t
-from ui.session import case_store, catalogue, persona_title
+from ui.session import bind, case_store, catalogue, persona_title
 from ui.viewer import view_button
 
 OFFICER = "STAFF-DEMO1"
@@ -290,11 +290,18 @@ def _case_list(cases, lang: str) -> str | None:
     """The cases on the left: what needs a decision first, then the decided ones. Returns the selected case."""
     ss = st.session_state
     if "staff_filter_next" in ss:                    # set by a decision, before the control is drawn
-        ss.staff_filter = ss.pop("staff_filter_next")
-    ss.setdefault("staff_filter", "todo")
-    show = st.segmented_control(t("list_show", lang), ["todo", "decided", "all"],
-                                format_func=lambda k: t("list_" + k, lang), key="staff_filter",
-                                label_visibility="collapsed", width="stretch") or "todo"
+        ss.staff_list = ss.pop("staff_filter_next")
+    if ss.get("staff_list") not in ("todo", "decided", "all"):
+        ss.staff_list = "todo"
+
+    def changed(key: str) -> None:
+        if ss.get(key) in ("todo", "decided", "all"):    # pressing the selected one again keeps the list as it is
+            ss.staff_list = ss[key]
+
+    k = bind("staff_filter", ss.staff_list)
+    st.segmented_control(t("list_show", lang), ["todo", "decided", "all"], format_func=lambda x: t("list_" + x, lang),
+                         key=k, on_change=changed, args=(k,), label_visibility="collapsed", width="stretch")
+    show = ss.staff_list
     pick = [c for c in cases if show == "all" or (c.status in TO_DECIDE) == (show == "todo")]
     # exceptions first (they need the most thought), then ready cases, newest first within each
     pick.sort(key=lambda c: (c.status != CaseStatus.PENDING_HUMAN_REVIEW, c.status != CaseStatus.SUBMITTED,

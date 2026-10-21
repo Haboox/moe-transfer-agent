@@ -28,7 +28,7 @@ def _run():
 
 
 def _start(at, pid):
-    at.session_state["persona"] = at.session_state["dc_persona"] = pid
+    at.session_state["persona"] = pid
     next(b for b in at.button if b.label == "Start new session").click().run()
 
 
@@ -66,7 +66,7 @@ def test_view_buttons_are_offered_for_attached_documents_and_the_library():
 @pytest.mark.parametrize("nat,owner", [("Oman", "SYN-P03"), ("Egypt", "SYN-P02"), ("Kuwait", "SYN-P11")])
 def test_choosing_a_nationality_shows_that_applicants_documents(nat, owner):
     at = _run()
-    at.session_state["open_nat"] = at.session_state["dc_open_nat"] = nat
+    at.session_state["open_nat"] = nat
     _start(at, "SYN-OPEN")
     lib = next(s for s in at.selectbox if s.key and s.key.startswith("lib_"))
     assert lib.value == owner
@@ -75,7 +75,7 @@ def test_choosing_a_nationality_shows_that_applicants_documents(nat, owner):
 
 def test_a_nationality_with_no_prepared_applicant_says_so():
     at = _run()
-    at.session_state["open_nat"] = at.session_state["dc_open_nat"] = "Iceland"
+    at.session_state["open_nat"] = "Iceland"
     _start(at, "SYN-OPEN")
     assert any("No prepared applicant" in c.value for c in at.caption)
 
@@ -93,7 +93,7 @@ def test_staff_portal_lists_cases_opens_one_and_records_the_decision():
     at.run()
     ref = agent.state.case_ref
     assert agent.state.status.value == "PENDING_HUMAN_REVIEW"
-    at.session_state["view_pick"] = "staff"
+    at.session_state["view"] = "staff"
     at.run()
     html = " ".join(m.value for m in at.markdown)
     assert ref in html and "callout warn" in html and "paid (receipt" in html
@@ -102,7 +102,7 @@ def test_staff_portal_lists_cases_opens_one_and_records_the_decision():
     next(b for b in at.button if b.label == "Approve").click().run()
     at.run()
     assert not at.exception and agent.backend.cases.get(ref).status.value == "HUMAN_APPROVED"
-    at.segmented_control(key="staff_filter").set_value("decided").run()
+    at.segmented_control(key="staff_filter__en0").set_value("decided").run()
     html = " ".join(m.value for m in at.markdown)
     assert "callout ok" in html and "Lineage name, same person" in html
 
@@ -110,7 +110,7 @@ def test_staff_portal_lists_cases_opens_one_and_records_the_decision():
 def test_staff_portal_in_arabic_with_no_cases():
     at = _run()
     next(b for b in at.button if b.key == "lang_btn").click().run()
-    at.session_state["view_pick"] = "staff"
+    at.session_state["view"] = "staff"
     at.run()
     assert not at.exception
     assert any("الطلبات" in str(t.label) for t in at.tabs)
@@ -120,7 +120,7 @@ def test_staff_portal_in_arabic_with_no_cases():
 def test_picking_a_situation_starts_it_at_once():
     at = _run()
     first = at.session_state["agent"].state.session_id
-    at.radio(key="dc_persona").set_value("SYN-P03").run()
+    at.radio(key="dc_persona__en0").set_value("SYN-P03").run()
     assert not at.exception
     agent = at.session_state["agent"]
     assert agent.state.persona_id == "SYN-P03" and agent.state.session_id != first
@@ -128,10 +128,15 @@ def test_picking_a_situation_starts_it_at_once():
 
 def test_changing_the_simulated_problem_starts_again_with_it():
     at = _run()
-    at.radio(key="dc_persona").set_value("SYN-P01").run()
-    at.selectbox(key="dc_failure").set_value("payment_down").run()
-    assert not at.exception and at.session_state["failure"] == "payment_down"
-    assert at.session_state["config"][2] == "payment_down"
+    at.radio(key="dc_persona__en0").set_value("SYN-P01").run()
+    at.selectbox(key="dc_fsys__en0").set_value("payment").run()
+    assert not at.exception and at.session_state["failure"] == "payment:timeout_once"
+    at.selectbox(key="dc_fmode__en0").set_value("error_always").run()
+    assert not at.exception and at.session_state["failure"] == "payment:error_always"
+    assert at.session_state["config"][2] == "payment:error_always"
+    assert at.session_state["agent"].backend.failures == {"payment": "error_always"}
+    at.selectbox(key="dc_fsys__en0").set_value("none").run()
+    assert at.session_state["failure"] == "none" and at.session_state["agent"].backend.failures == {}
 
 
 def test_clear_all_cases_empties_the_staff_portal():

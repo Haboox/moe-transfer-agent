@@ -27,10 +27,14 @@ def test_every_key_the_screens_ask_for_exists():
 
 def test_every_dynamic_text_family_is_complete():
     from ui.parent import UPLOAD_TYPES
-    from ui.session import FAILURES
+    from agent.executor import LANES
+    from ui.session import MODES, SYSTEMS
     need = ([f"st_{s.value}" for s in CaseStatus] + [f"oc_{o.value}" for o in Outcome]
-            + [f"rs_{r.value}" for r in RuleStatus] + [f"fail_{f}" for f in FAILURES]
-            + [f"prov_{p}" for p in ("ollama", "hosted", "anthropic", "scripted")]
+            + [f"rs_{r.value}" for r in RuleStatus] + ["fail_none"] + [f"sys_{x}" for x in SYSTEMS]
+            + [f"mode_{m}" for m in MODES] + [f"cs_{n}" for n in range(1, 7)] + [f"lane_{x}" for x in LANES]
+            + [f"lane_{x}_d" for x in LANES if x != "input"]
+            + [f"how_{x}" for x in ("p01", "p02", "p03", "p04", "p05", "p06", "open", "other")]
+            + [f"prov_{p}" for p in ("ollama", "hosted", "anthropic", "scripted", "adversarial")]
             + [f"ut_{u}" for u in UPLOAD_TYPES] + [f"lang_{x}" for x in ("en", "ar")]
             + [f"list_{x}" for x in ("todo", "decided", "all")] + [f"list_empty_{x}" for x in ("todo", "decided", "all")])
     assert not [k for k in need if k not in S]

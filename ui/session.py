@@ -1,7 +1,9 @@
 """Session state for the app: which demo is set up, the agent of the current parent session, the chat."""
 from __future__ import annotations
 
+import json
 import os
+import re
 from dataclasses import replace
 from datetime import datetime
 
@@ -16,16 +18,40 @@ from agent.llm import LLMError, hosted_status, make_llm, ollama_status
 from agent.mocks import OPEN_ID, CaseStore, MockBackend
 from ui.i18n import t
 
-FAILURES = {
-    "none": None,
-    "timeout_once": {"verification": ["timeout"]},
-    "error_once": {"verification": ["error"]},
-    "malformed": {"verification": "malformed_always"},
-    "timeout_always": {"verification": "timeout_always"},
-    "identity_down": {"identity": "error_always"},
-    "payment_down": {"payment": "error_always"},
-    "cases_down": {"cases": "error_always"},
-}
+# A Ministry system problem to simulate (Demo controls, section 3). Every mocked system can fail in the three ways
+# the case study names (a timeout, a server error, a bad response), once (the retry recovers) or every time.
+SYSTEMS = ["verification", "identity", "payment", "cases"]
+MODES = ["timeout_once", "error_once", "malformed_once", "timeout_always", "error_always", "malformed_always"]
+
+
+def _plan(system: str, mode: str) -> dict:
+    kind, when = mode.rsplit("_", 1)
+    return {system: [kind] if when == "once" else f"{kind}_always"}
+
+
+FAILURES = {"none": None} | {f"{sy}:{m}": _plan(sy, m) for sy in SYSTEMS for m in MODES}
+
+# Picking a test situation sets the system problem that goes with it (Scenario 5 of the case study: a backend
+# failure, timeout or bad response). Every other situation starts with all systems working.
+SCENARIO_FAILURE = {"SYN-P05": "verification:timeout_once"}
+# The one-click problems offered right under Scenario 5 (any system and problem can still be picked in section 3)
+S5_PICKS = [f"verification:{m}" for m in MODES]
+# The case study's six mandatory scenarios, by their names in the brief (the other situations are extras)
+MANDATORY = {f"SYN-P0{n}": n for n in range(1, 7)}
+
+
+def fail_parts(key: str) -> tuple[str, str]:
+    """("none", "") or (system, mode)."""
+    return tuple(key.split(":", 1)) if ":" in (key or "") else ("none", "")
+
+
+def fail_label(key: str, lang: str) -> str:
+    system, mode = fail_parts(key)
+    if system == "none":
+        return t("fail_none", lang)
+    return f"{t('sys_' + system, lang)}: {t('mode_' + mode, lang)}"
+
+
 base_settings = get_settings()
 ONLINE = os.getenv("MOE_ONLINE", "").strip().lower() in ("1", "true", "yes")   # the hosted copy (plan B)
 
@@ -38,7 +64,8 @@ def _providers() -> list[str]:
         out.append("hosted")
     if base_settings.anthropic_api_key or base_settings.llm_provider == "anthropic":
         out.append("anthropic")
-    return out + ["scripted"]
+    # last: a simulated compromised model (it obeys the injection), to demonstrate that the guard holds anyway
+    return out + ["scripted", "adversarial"]
 
 
 PROVIDERS = _providers()
@@ -50,20 +77,76 @@ def catalogue() -> MockBackend:
     return MockBackend()
 
 
+def _url(name: str) -> str | None:
+    try:
+        return st.query_params.get(name)
+    except Exception:  # noqa: BLE001 - no page address (bare run)
+        return None
+
+
+def _sessions_file(store_path) -> "os.PathLike":
+    return store_path.with_name(store_path.stem + "_sessions.json")
+
+
+def _remember_sessions() -> None:
+    """The parent sessions of this demonstration (for the staff portal's audit trail), kept beside its case list."""
+    ss = st.session_state
+    try:
+        f = _sessions_file(ss.store_path)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(ss.session_ids), encoding="utf-8")
+    except OSError:
+        pass                                    # the audit trail list is a convenience; the logs themselves are kept
+
+
 def defaults() -> None:
     ss = st.session_state
+    if "store_path" not in ss:
+        # First run of this browser visit, or the page was reloaded. The page address carries the demonstration
+        # (?run=...&lang=...&theme=...), so a reload keeps the staff portal's cases, the language and the look
+        # (found 22 October: a reload in the middle of a demonstration emptied the staff portal). The parent's chat
+        # starts again; the cases and their audit trails stay. "Clear all cases" starts a new run.
+        run = _url("run")
+        run = run if run and re.fullmatch(r"[0-9a-f]{12}", run) else uuid4().hex[:12]
+        ss.store_path = RUNTIME_DIR / "sessions" / f"cases_{run}.json"
+        try:
+            ss.session_ids = [tuple(x) for x in json.loads(_sessions_file(ss.store_path).read_text(encoding="utf-8"))]
+        except (OSError, ValueError, TypeError):
+            ss.session_ids = []
+        ss.lang = _url("lang") if _url("lang") in ("en", "ar") else "en"
+        ss.theme = _url("theme") if _url("theme") in ("light", "dark") else "light"
     ss.setdefault("lang", "en")
     ss.setdefault("theme", "light")
     ss.setdefault("view", "parent")
     ss.setdefault("persona", OPEN_ID)             # the portal opens on the open test: no preset case
     ss.setdefault("open_nat", None)               # nationality on the mock UAE Pass record in the open test (none yet)
-    ss.setdefault("provider", base_settings.llm_provider if base_settings.llm_provider in PROVIDERS else PROVIDERS[0])
+    ss.setdefault("provider", base_settings.llm_provider if base_settings.llm_provider in PROVIDERS[:-1] else PROVIDERS[0])
     ss.setdefault("failure", "none")
     ss.setdefault("show_inner", False)          # the presenter turns this on in Demo controls
-    # One case list per browser visit: the Staff portal shows the cases of THIS demonstration only. Reloading the
-    # page starts a clean list (earlier visits stay on disk in runtime/sessions/ and in logs/, never shown again).
-    ss.setdefault("store_path", RUNTIME_DIR / "sessions" / f"cases_{uuid4().hex[:12]}.json")
-    ss.setdefault("session_ids", [])
+    ss.setdefault("ui_epoch", 0)                # counts language switches (fresh widget keys each time, see wkey)
+    ss.setdefault("staff_list", "todo")         # which cases the staff portal lists
+    # One case list per demonstration: the Staff portal shows the cases of THIS demonstration only (a new browser
+    # visit without the address of an earlier one starts a clean list; earlier lists stay on disk, never shown).
+    keep_address()
+
+
+def keep_address() -> None:
+    """Writes the demonstration into the page address (no reload), so reloading the page comes back to it."""
+    ss = st.session_state
+    want = {"run": ss.store_path.stem.removeprefix("cases_"), "lang": ss.lang, "theme": ss.theme}
+    try:
+        for k, v in want.items():
+            if st.query_params.get(k) != v:
+                st.query_params[k] = v
+    except Exception:  # noqa: BLE001 - no page address (bare run)
+        pass
+
+
+def turn_flags() -> dict:
+    """{"pending": the parent's message waiting for an answer, "busy": True while the assistant answers}. A plain
+    dict kept in the session, so a turn can take the message and finish without touching st.session_state
+    (see ui/parent.py, _chat)."""
+    return st.session_state.setdefault("turn_flags", {"busy": False, "pending": None})
 
 
 def case_store() -> CaseStore:
@@ -100,12 +183,57 @@ def persona_title(pid: str, lang: str) -> str:
 
 
 def persona_story(pid: str, lang: str) -> str:
+    """The situation's name in Demo controls: the six mandatory scenarios carry the brief's own names."""
+    if pid in MANDATORY:
+        n = MANDATORY[pid]
+        return t("cs_label", lang, n=n, x=t(f"cs_{n}", lang))
     p = catalogue().personas[pid]
     return p.get("story_ar", p["story"]) if lang == "ar" else p["story"]
 
 
+def persona_detail(pid: str, lang: str) -> str:
+    """The line under each situation: what this synthetic case contains, and who the applicant is."""
+    if pid == OPEN_ID:
+        return t("open_title", lang)
+    p = catalogue().personas[pid]
+    story = p.get("story_ar", p["story"]) if lang == "ar" else p["story"]
+    what = story.split(":", 1)[1].strip() if pid in MANDATORY and ":" in story else ""
+    return (what[:1].upper() + what[1:] + " · " if what else "") + persona_title(pid, lang)
+
+
+def wkey(name: str) -> str:
+    """Key of a widget whose labels change with the page language. Streamlit keeps a keyed choice as its label
+    text, so after a language switch the old label matches nothing (found 22 October: the English label "None"
+    came back as the chosen problem and crashed the restart). Each language visit gets fresh widget keys, and the
+    widget is filled from the session's own value (bind)."""
+    ss = st.session_state
+    return f"{name}__{ss.get('lang', 'en')}{ss.get('ui_epoch', 0)}"
+
+
+def bind(name: str, value) -> str:
+    """Fills a language-keyed widget from the session's value, before the widget is drawn. Returns its key."""
+    k = wkey(name)
+    st.session_state[k] = value
+    return k
+
+
+def valid_setup() -> None:
+    """Every setting the session starts from is one the app offers. Found 22 October: switching the page language
+    could leave a stale Demo controls value ("None") that crashed the restart; a bad value now falls back."""
+    ss = st.session_state
+    if ss.get("persona") not in catalogue().personas:
+        ss.persona = OPEN_ID
+    if ss.get("provider") not in PROVIDERS:
+        ss.provider = base_settings.llm_provider if base_settings.llm_provider in PROVIDERS[:-1] else PROVIDERS[0]
+    if ss.get("failure") not in FAILURES:
+        ss.failure = "none"
+    if ss.get("lang") not in ("en", "ar"):
+        ss.lang = "en"
+
+
 def new_session() -> None:
     ss = st.session_state
+    valid_setup()
     settings = replace(base_settings, llm_provider=ss.provider)
     try:
         llm = make_llm(settings)
@@ -117,10 +245,11 @@ def new_session() -> None:
                           interactive_payments=True, open_nationality=ss.open_nat or "")
     ss.agent = ServiceAgent(llm, ss.persona, backend=backend, settings=settings, ui_lang=ss.lang)
     ss.session_ids.append((ss.agent.state.session_id, ss.persona, ss.lang))
+    _remember_sessions()
     ss.chat = [{"role": "assistant", "text": t("greeting", ss.lang), "kind": ""}]
     ss.config = config_key()
-    for k in ("pending", "busy", "pay_prompted"):
-        ss.pop(k, None)
+    ss.pop("pay_prompted", None)
+    ss.turn_flags = {"busy": False, "pending": None}
 
 
 def clear_cases() -> None:
@@ -131,6 +260,7 @@ def clear_cases() -> None:
     ss.session_ids = []
     ss.pop("staff_sel", None)
     new_session()
+    keep_address()
 
 
 def config_key() -> tuple:
@@ -141,7 +271,8 @@ def config_key() -> tuple:
 def send(text: str, uploads: list[str]) -> None:
     """Show the parent's message at once; the assistant answers on the next run (typing indicator)."""
     ss = st.session_state
-    if ss.get("pending") or ss.get("busy"):
+    flags = turn_flags()
+    if flags.get("pending") or flags["busy"]:
         ss.flash = t("wait_answer", ss.lang)      # one turn at a time: the parent is told, nothing is lost silently
         return
     from ui.i18n import doc_label
@@ -153,7 +284,7 @@ def send(text: str, uploads: list[str]) -> None:
     if last and last["role"] == "user" and last["text"] == shown:
         return                                   # same message twice in a row, not yet answered
     ss.chat.append({"role": "user", "text": shown, "kind": ""})
-    ss.pending = (text, uploads)
+    flags["pending"] = (text, uploads)
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -174,6 +305,8 @@ def ai_status(provider: str, lang: str) -> tuple[str, str]:
     m = base_settings.ollama_model
     if provider == "scripted":
         return "#1E7A46", t("ai_ready_scripted", lang)
+    if provider == "adversarial":
+        return "#C08A00", t("ai_adversarial", lang)
     if provider == "anthropic":
         return ("#1E7A46", t("ai_key_ok", lang)) if base_settings.anthropic_api_key else ("#B42318", t("ai_no_key", lang))
     if provider == "hosted":

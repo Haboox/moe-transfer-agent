@@ -25,6 +25,9 @@ from .models import CaseState
 _POOL = ThreadPoolExecutor(max_workers=8, thread_name_prefix="mock-call")
 
 
+LANES = ("input", "interpret", "validate", "act", "approve")
+
+
 class ToolFailure(Exception):
     """A backend call still failed after the retry policy."""
 
@@ -42,10 +45,16 @@ class AgentContext:
     trace: list[dict] = field(default_factory=list)   # short human-readable trace for the UI
     stats: dict = field(default_factory=lambda: {"tool_calls": 0, "tool_ok": 0, "guard_blocked": 0,
                                                   "backend_attempts": 0, "backend_failures": 0,
-                                                  "recovered_by_retry": 0, "tool_failed": 0})
+                                                  "recovered_by_retry": 0, "tool_failed": 0,
+                                                  "override_attempts": 0, "replies_blocked": 0,
+                                                  "doc_instructions": 0})
 
-    def add_trace(self, title: str, note: str = "", kind: str = "info") -> None:
-        self.trace.append({"title": title, "note": note, "kind": kind})
+    def add_trace(self, title: str, note: str = "", kind: str = "info", lane: str = "act") -> None:
+        """One line of the agent trace. `lane` is which of the case study's four responsibilities did it:
+        interpret (the model), validate (fixed rules and checks, no AI), act (an authorised tool through the
+        guard), approve (a person), or input (the customer)."""
+        assert lane in LANES, lane
+        self.trace.append({"title": title, "note": note, "kind": kind, "lane": lane})
 
 
 def call_backend(ctx: AgentContext, system: str, operation: str, fn: Callable[[], Any],
@@ -64,7 +73,7 @@ def call_backend(ctx: AgentContext, system: str, operation: str, fn: Callable[[]
                           attempt=attempt, outcome="ok")
             if attempt > 1:
                 ctx.stats["recovered_by_retry"] += 1
-                ctx.add_trace(f"{operation}() recovered", f"{last_outcome}, retried once, succeeded", "warn")
+                ctx.add_trace(f"{operation}() -> {last_outcome}, recovered", "mock tool, retried once, succeeded", "warn")
             return result
         except ToolTimeout as e:
             last_outcome, last_msg = "timeout", str(e)
@@ -77,7 +86,8 @@ def call_backend(ctx: AgentContext, system: str, operation: str, fn: Callable[[]
         ctx.audit.log("tool", "backend_call", basis, system=system, operation=operation,
                       attempt=attempt, outcome=last_outcome, error=last_msg,
                       will_retry=attempt < attempts)
-    ctx.add_trace(f"{operation}() failed", f"{last_outcome} after {attempts} attempts", "error")
+    ctx.add_trace(f"{operation}() -> {last_outcome}", f"mock tool, failed after {attempts} attempts; nothing guessed",
+                  "error")
     raise ToolFailure(system, last_outcome, last_msg)
 
 
@@ -95,7 +105,7 @@ def run_tool(ctx: AgentContext, name: str, raw_args: Any, requested_by: str = "m
     if not decision.allowed:
         ctx.stats["guard_blocked"] += 1
         ctx.audit.log("guard", "tool_blocked", basis=decision.policy, tool=name, reason=decision.reason)
-        ctx.add_trace(f"BLOCKED {name}()", f"{decision.policy}: {decision.reason}", "block")
+        ctx.add_trace(f"BLOCKED {name}()", f"guard, {decision.policy}: {decision.reason}", "block")
         return {"status": "blocked", "reason": decision.reason, "policy": decision.policy}
     ctx.audit.log("guard", "tool_allowed", basis=decision.policy, tool=name)
     spec = TOOLS[name]

@@ -59,7 +59,7 @@ def test_staff_view_and_theme_switch_render():
     at = _run()
     next(b for b in at.button if b.key == "theme_btn").click().run()
     assert at.session_state["theme"] == "dark" and not at.exception
-    at.session_state["view_pick"] = "staff"            # the Parent | Staff switch
+    at.session_state["view"] = "staff"            # the Parent | Staff switch
     at.run()
     assert not at.exception
     assert any("Cases" in str(t.label) for t in at.tabs) and any("Audit" in str(t.label) for t in at.tabs)
@@ -83,21 +83,21 @@ def test_every_prepared_applicant_and_the_open_test_run_on_both_screens(lang):
         next(b for b in at.button if b.key == "lang_btn").click().run()
     label = "إرفاق المحدد" if lang == "ar" else "Attach selected"
     for pid in persona_ids():
-        at.session_state["persona"] = at.session_state["dc_persona"] = pid
+        at.session_state["persona"] = pid
         at.session_state["open_nat"] = "Oman" if pid == "SYN-OPEN" else None
         next(b for b in at.button if b.label in ("Start new session", "بدء جلسة جديدة")).click().run()
         assert not at.exception, (pid, at.exception)
         if any(cb.key and cb.key.startswith("pick_") for cb in at.checkbox):
             _attach_all(at, label)
         assert not at.exception, (pid, at.exception)
-    at.session_state["view_pick"] = "staff"
+    at.session_state["view"] = "staff"
     at.run()
     assert not at.exception
 
 
 def test_the_officer_sees_which_name_does_not_match_and_on_which_document():
     at = _run()
-    at.session_state["persona"] = at.session_state["dc_persona"] = "SYN-P03"
+    at.session_state["persona"] = "SYN-P03"
     next(b for b in at.button if b.label == "Start new session").click().run()
     _attach_all(at, "Attach selected")
     agent = at.session_state["agent"]
@@ -111,7 +111,7 @@ def test_the_officer_sees_which_name_does_not_match_and_on_which_document():
     at.run()
     assert agent.state.status.value == "PENDING_HUMAN_REVIEW" and agent.state.receipt is not None
     assert "fee is paid" in at.session_state["chat"][-1]["text"]
-    at.session_state["view_pick"] = "staff"
+    at.session_state["view"] = "staff"
     at.run()
     html = " ".join(m.value for m in at.markdown)
     assert "Salem bin Saeed Al Qarwani" in html and "class='bad'>No<" in html and "Grade 4 certificate" in html

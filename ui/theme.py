@@ -126,8 +126,21 @@ table.rules td {{ border-bottom:1px solid var(--border); padding:6px; vertical-a
 table.rules td.r {{ white-space:nowrap; color:var(--gold); font-weight:700; direction:ltr; }}
 table.evidence .bad {{ font-weight:700; }} table.evidence {{ margin:2px 0 8px; }}
 .ok {{ color:{c['ok']}; }} .bad {{ color:{c['bad']}; }} .miss {{ color:{c['warn']}; }} .rev {{ color:{c['info']}; }} .na {{ color:var(--muted); }}
-.trace div.t {{ font-size:.82rem; padding:6px 0; border-bottom:1px solid var(--border); direction:ltr; text-align:left; }}
+.trace div.t {{ font-size:.82rem; padding:6px 0; border-bottom:1px solid var(--border); direction:ltr; text-align:left;
+               display:flex; gap:8px; align-items:flex-start; }}
 .trace span.n {{ display:block; color:var(--muted); font-size:.75rem; }}
+.trace div.t.block .tt, .trace div.t.error .tt {{ color:{c['bad']}; font-weight:600; }}
+.lane {{ flex:0 0 auto; display:inline-block; min-width:74px; text-align:center; font-size:.64rem; font-weight:700;
+        letter-spacing:.04em; text-transform:uppercase; border-radius:6px; padding:2px 6px; margin-top:1px; }}
+.lane.input {{ background:var(--chip); color:var(--muted); }}
+.lane.interpret {{ background:{c['infobg']}; color:{c['info']}; }}
+.lane.validate {{ background:var(--goldsoft); color:var(--gold); }}
+.lane.act {{ background:{c['okbg']}; color:{c['ok']}; }}
+.lane.approve {{ background:{c['warnbg']}; color:{c['warn']}; }}
+.lane-legend {{ font-size:.76rem; color:var(--muted); margin:0 0 8px; }}
+.lane-legend div {{ display:flex; gap:8px; align-items:center; margin:3px 0; }}
+.kv.sec {{ grid-template-columns: 1fr auto; font-size:.84rem; row-gap:6px; }}
+.kv.sec .v {{ font-weight:700; text-align:end; }}
 .muted {{ color:var(--muted); font-size:.82rem; }}
 .dot {{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:6px; }}
 .kpi {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
