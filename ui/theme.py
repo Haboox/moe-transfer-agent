@@ -130,9 +130,38 @@ table.evidence .bad {{ font-weight:700; }} table.evidence {{ margin:2px 0 8px; }
 .trace span.n {{ display:block; color:var(--muted); font-size:.75rem; }}
 .muted {{ color:var(--muted); font-size:.82rem; }}
 .dot {{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:6px; }}
-.kpi {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }}
-.kpi .n {{ font-size:1.7rem; font-weight:700; color:var(--gold); line-height:1.1; }}
-.kpi .l {{ font-size:.82rem; color:var(--muted); }}
+.kpi {{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+        border-inline-start:5px solid var(--gold); box-shadow:{c['shadow']}; }}
+.kpi .n {{ font-size:1.8rem; font-weight:700; color:var(--gold); line-height:1.1; }}
+.kpi .l {{ font-size:.84rem; color:var(--muted); margin-top:2px; }}
+.kpi.warn {{ border-inline-start-color:{c['warn']}; }} .kpi.warn .n {{ color:{c['warn']}; }}
+.kpi.ok {{ border-inline-start-color:{c['ok']}; }} .kpi.ok .n {{ color:{c['ok']}; }}
+.kpi.muted {{ border-inline-start-color:var(--muted); }} .kpi.muted .n {{ color:{c['text']}; }}
+/* staff portal: case list, case header, call-outs and the timeline */
+.case-row {{ font-size:.88rem; line-height:1.45; }}
+.case-row .top {{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:2px; }}
+.case-row .top b {{ font-size:1rem; letter-spacing:.02em; direction:ltr; white-space:nowrap; }}
+.case-row .top .pill {{ text-align:center; }}
+.case-row.sel .top b {{ color:var(--gold); }}
+.case-ref {{ font-size:1.45rem; font-weight:700; letter-spacing:.02em; color:{c['text']}; direction:ltr; }}
+.kv.wide {{ grid-template-columns: 150px 1fr; margin:6px 0 12px; }}
+.callout {{ border-radius:10px; padding:10px 14px; margin:6px 0 12px; font-size:.9rem; border:1px solid var(--border); }}
+.callout b {{ display:block; margin-bottom:4px; }}
+.callout.warn {{ background:{c['warnbg']}; border-color:{c['warn']}; }} .callout.warn b {{ color:{c['warn']}; }}
+.callout.ok {{ background:{c['okbg']}; border-color:{c['ok']}; }} .callout.ok b {{ color:{c['ok']}; }}
+.callout.bad {{ background:{c['badbg']}; border-color:{c['bad']}; }} .callout.bad b {{ color:{c['bad']}; }}
+.callout ul.why {{ margin-bottom:0; }}
+.timeline {{ border-inline-start:2px solid var(--border); margin:4px 0 4px 6px; padding-inline-start:12px; }}
+.timeline .ev {{ position:relative; display:grid; grid-template-columns:70px 110px 1fr; column-gap:10px; row-gap:2px;
+                padding:6px 0; border-bottom:1px dashed var(--border); font-size:.84rem; }}
+.timeline .ev::before {{ content:''; position:absolute; inset-inline-start:-18px; top:11px; width:10px; height:10px;
+                        border-radius:50%; background:var(--muted); }}
+.timeline .ev.customer::before {{ background:var(--gold); }} .timeline .ev.human::before {{ background:{c['ok']}; }}
+.timeline .ev.guard::before, .timeline .ev.policy::before {{ background:{c['warn']}; }}
+.timeline .ev.model::before {{ background:{c['info']}; }}
+.timeline .tm {{ color:var(--muted); direction:ltr; font-variant-numeric:tabular-nums; }}
+.timeline .who {{ font-weight:600; }}
+.timeline .why {{ grid-column:3; color:var(--muted); font-size:.76rem; }}
 .chips span {{ display:inline-block; font-size:.74rem; border-radius:6px; padding:2px 7px; margin:2px 3px 2px 0;
               background:var(--chip); border:1px solid var(--border); direction:ltr; }}
 .payhead {{ display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border);

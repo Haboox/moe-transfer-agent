@@ -62,7 +62,7 @@ def test_staff_view_and_theme_switch_render():
     at.session_state["view_pick"] = "staff"            # the Parent | Staff switch
     at.run()
     assert not at.exception
-    assert any("Decisions" in str(t.label) for t in at.tabs)
+    assert any("Cases" in str(t.label) for t in at.tabs) and any("Audit" in str(t.label) for t in at.tabs)
 
 
 def test_language_switch_starts_a_session_with_that_editions_documents():

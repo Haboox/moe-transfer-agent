@@ -122,10 +122,20 @@ with r_ctrl:
         # The open test's nationality comes first (it is the default test), so it is never pushed below the list.
         if ss.get("dc_persona", ss.persona) == OPEN_ID:
             nats = names(lang)
+
+            def nationality_changed() -> None:
+                # Applied at once: the open test restarts with the new UAE Pass record, and the document library
+                # switches to the applicant with that nationality (ui/parent.py)
+                ss.open_nat = ss.dc_open_nat
+                if ss.persona == OPEN_ID:
+                    new_session()
+                    ss.flash = t("nat_applied", lang, n=shown(ss.open_nat, lang) if ss.open_nat else "-")
+
             ss.open_nat = st.selectbox(t("dc_open_nat", lang), nats,
                                        index=nats.index(ss.open_nat) if ss.open_nat in nats else None,
                                        placeholder=t("dc_open_nat_ph", lang), format_func=lambda n: shown(n, lang),
-                                       help=t("dc_open_nat_help", lang))
+                                       help=t("dc_open_nat_help", lang), key="dc_open_nat",
+                                       on_change=nationality_changed)
             if not ss.open_nat:
                 st.caption(t("dc_open_nat_none", lang))
         # A list, not a drop-down: every test situation is readable in full without opening anything

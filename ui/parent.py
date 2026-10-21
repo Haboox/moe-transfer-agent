@@ -11,7 +11,8 @@ from agent.models import CaseStatus
 from ui.i18n import S, doc_label, reason, t
 from agent.receipt import build_receipt
 from agent.mocks import OPEN_ID
-from ui.session import ai_status, base_settings, persona_title, send, student_name
+from ui.session import ai_status, base_settings, catalogue, persona_title, send, student_name
+from ui.viewer import view_button
 
 PILL = {"IN_PROGRESS": "p-grey", "AWAITING_CUSTOMER": "p-blue", "AWAITING_PAYMENT": "p-amber", "SUBMITTED": "p-green",
         "PENDING_HUMAN_REVIEW": "p-amber", "REDIRECTED": "p-grey", "HUMAN_APPROVED": "p-green",
@@ -102,10 +103,12 @@ def _documents(agent: ServiceAgent, lang: str) -> None:
                 state = (t("doc_verified", lang) if v is not None and v.authenticity == "verified" else
                          t("doc_unconfirmed", lang) if v is not None else
                          t("doc_failed", lang) if did in s.failed_verifications else t("doc_attached", lang))
-                a, b = st.columns([5, 2], vertical_alignment="center")
+                a, vcol, b = st.columns([5, 2, 2], vertical_alignment="center")
                 a.markdown(f"<div class='att'>{'✓' if v is not None and v.authenticity == 'verified' else '•'} "
                            f"{escape(label(docs[did]))} "
                            f"<span class='muted'>· {escape(state)}</span></div>", unsafe_allow_html=True)
+                view_button(vcol, ROOT / docs[did]["path"], label(docs[did]), docs[did]["file_name"], lang,
+                            key=f"att_{s.session_id}_{did}")
                 if not s.is_closed() and b.button(t("doc_remove_short", lang), key=f"rm_{s.session_id}_{did}",
                                                   icon=":material/close:", help=t("doc_remove", lang), disabled=busy,
                                                   type="tertiary"):
@@ -115,8 +118,16 @@ def _documents(agent: ServiceAgent, lang: str) -> None:
         if is_open and files and not s.is_closed():
             st.markdown(f"<div class='h5'>{escape(t('lib_title', lang))}</div>", unsafe_allow_html=True)
             owners = list(dict.fromkeys(d["persona_id"] for d in files))
+            # The nationality chosen in Demo controls picks the applicant with that nationality, so the passport,
+            # the visa rule and the certificates agree with the UAE Pass record (any applicant can still be picked)
+            nat = st.session_state.get("open_nat")
+            match = next((o for o in owners
+                          if nat and catalogue().personas.get(o, {}).get("student", {}).get("nationality") == nat), None)
             pick = st.selectbox(t("lib_show", lang), owners, key=f"lib_{s.session_id}",
+                                index=owners.index(match) if match else 0,
                                 format_func=lambda p: persona_title(p, lang))
+            if nat:
+                st.caption(t("lib_matched" if match else "lib_nomatch", lang))
             files = [d for d in files if d["persona_id"] == pick]
         left = [d for d in files if d["doc_id"] not in attached]
         if left and not s.is_closed():
@@ -150,14 +161,16 @@ def _documents(agent: ServiceAgent, lang: str) -> None:
                         did = agent.backend.register_file(s.persona_id, data, f.name, kind, edition)
                         send(t("attached_msg", lang), [did])
                         st.rerun()
-        with st.expander(t("docs_preview", lang)):
+        with st.expander(t("docs_preview", lang), icon=":material/visibility:"):
             view = st.selectbox(t("docs_preview", lang), [d["doc_id"] for d in files], label_visibility="collapsed",
-                                format_func=lambda i: doc_label(docs[i], lang), key=f"view_{s.session_id}")
+                                format_func=lambda i: doc_label(docs[i], lang), key=f"viewpick_{s.session_id}")
             vd = docs[view]
             path = ROOT / vd["path"]
-            st.download_button(t("docs_open_pdf", lang), path.read_bytes(), file_name=vd["file_name"],
+            c1, c2 = st.columns(2)
+            view_button(c1, path, doc_label(vd, lang), vd["file_name"], lang, key=f"lib_{s.session_id}_{view}")
+            c2.download_button(t("view_download", lang), path.read_bytes(), file_name=vd["file_name"],
                                mime=MIME.get(path.suffix.lower(), "application/octet-stream"), width="stretch",
-                               icon=":material/download:")
+                               icon=":material/download:", type="tertiary")
 
 
 def _helpful_info(lang: str) -> None:
