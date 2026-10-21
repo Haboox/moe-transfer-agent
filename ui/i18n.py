@@ -76,6 +76,10 @@ S = {
     "ai_ready_scripted": ("Ready (no AI)", "جاهز (بدون ذكاء اصطناعي)"),
     "ai_key_ok": ("Key configured", "تم إعداد المفتاح"),
     "ai_no_key": ("No API key set (.env, or the app's secrets online)", "لا يوجد مفتاح (ملف .env أو أسرار التطبيق على الإنترنت)"),
+    "ai_paused": ("AI paused (free allowance used up) until about {t} UAE time. The portal answers without AI until then.",
+                  "الذكاء الاصطناعي متوقف (استُنفد الرصيد المجاني) حتى الساعة {t} تقريباً بتوقيت الإمارات. تعمل البوابة دون ذكاء اصطناعي حتى ذلك الحين."),
+    "ai_on_fallback": ("Main model resting; using the backup model {m}", "النموذج الرئيسي متوقف مؤقتاً؛ يُستخدم النموذج الاحتياطي {m}"),
+    "ai_left": (" · about {n} requests left today", " · يتبقى نحو {n} طلباً اليوم"),
     "ai_hosted_down": ("Hosted model not reachable ({d})", "تعذر الوصول إلى النموذج المستضاف ({d})"),
     "ai_not_offered": ("{m} is not offered by the service now: change HOSTED_MODEL", "النموذج {m} غير متاح حالياً: غيّر HOSTED_MODEL"),
     "ai_not_running": ("Not running. Open the Ollama app (or restart the portal with run_app), then Check again.",
@@ -117,7 +121,7 @@ S = {
                      "لم يستجب الذكاء الاصطناعي، لذلك كُتبت هذه الرسالة من سجل الطلب."),
     "attached": ("Attached", "المرفقات"),
     "dv_renewed": (" (renewed)", " (مجدد)"), "dv_scan": (" (scanned PDF)", " (نسخة ممسوحة PDF)"),
-    "dv_photo": (" (phone photo, JPG)", " (صورة من الهاتف JPG)"),
+    "dv_photo": (" (phone photo, {f})", " (صورة من الهاتف {f})"),
     "doc_remove": ("Remove this file", "إزالة هذا الملف"), "doc_remove_short": ("Remove", "إزالة"),
     "dc_open_nat": ("Open test: nationality on the UAE Pass record", "الاختبار المفتوح: الجنسية في سجل الهوية الرقمية"),
     "dc_open_nat_ph": ("Select a nationality", "اختر الجنسية"),
@@ -372,8 +376,9 @@ def _variant(d: dict, lang: str) -> str:
         return t("dv_renewed", lang)
     if v == "scan":
         return t("dv_scan", lang)
-    if d.get("file_name", "").lower().endswith((".jpg", ".jpeg", ".png")):
-        return t("dv_photo", lang)
+    name = d.get("file_name", "").lower()
+    if name.endswith((".jpg", ".jpeg", ".png")):
+        return t("dv_photo", lang, f="PNG" if name.endswith(".png") else "JPG")
     return ""
 
 

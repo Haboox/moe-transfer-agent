@@ -245,6 +245,13 @@ def received_list(s: CaseState, lang: str) -> str:
             names.append(DOC_WORDS.get(u.doc_type, (u.doc_type, u.doc_type))[1 if ar else 0])
     if not names:
         return "مستنداتك" if ar else "your documents"
+    # several files for the same requirement are named once, with the count (found in testing: "the passport,
+    # the passport and the passport")
+    counts: dict[str, int] = {}
+    for n in names:
+        counts[n] = counts.get(n, 0) + 1
+    names = [n if c == 1 else (f"{n} ({c} ملفات)" if ar and c > 2 else f"{n} (ملفان)" if ar else f"{n} ({c} files)")
+             for n, c in counts.items()]
     if len(names) == 1:
         return names[0]
     return ("، ".join(names[:-1]) + " و" + names[-1]) if ar else (", ".join(names[:-1]) + " and " + names[-1])

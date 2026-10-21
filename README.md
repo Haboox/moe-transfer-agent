@@ -65,7 +65,7 @@ Running setup again is always safe: it keeps what is already done.
 | 1. Python | Finds Python 3.12 or newer and creates the project's own environment in `.venv` (nothing is installed system wide) | If no suitable Python is found: "Download uv and Python 3.13 now?" Answer **y**, and a private copy of Python is downloaded for this project only (no admin rights needed) |
 | 2. Packages | Installs the exact tested versions in `requirements.txt` into `.venv` | |
 | 3. Settings | Copies `.env.example` to `.env` (an existing `.env` is kept) | |
-| 4. Tests | Runs the 531 automated tests (no AI needed, about 2 minutes) | |
+| 4. Tests | Runs the 537 automated tests (no AI needed, about 2 minutes) | |
 | 5. AI model | Starts Ollama if it is installed and offers to download the model `qwen3:8b` (about 5 GB) | "Download qwen3:8b now?" If Ollama is missing it offers to open the download page, and to use the portal without AI for now |
 
 ### The AI model
@@ -158,7 +158,7 @@ computer's clock (policy P-17).
 
 | Command (macOS / Linux) | Windows | What it runs | AI needed |
 |---|---|---|---|
-| `bash run_tests.sh` | `run_tests.bat` | All 531 automated tests, about 2 minutes | No |
+| `bash run_tests.sh` | `run_tests.bat` | All 537 automated tests, about 2 minutes | No |
 | `bash run_live_checks.sh` | `run_live_checks.bat` | The 8 main scenarios (S1, S3, S4, S6 in English and Arabic) with the real model | Yes |
 | `bash run_live_checks.sh all` | `run_live_checks.bat all` | All 42 scenarios, 78 chat probes and 56 stress conversations with the real model (a few hours on a small GPU) | Yes |
 
@@ -193,7 +193,7 @@ ADV variants replace the model with a simulated compromised model that obeys the
 rules and reply checks must hold anyway. Every scenario also checks that no sensitive data reaches replies or logs,
 and that every reply is in the parent's language.
 
-### What the 531 tests prove
+### What the 537 tests prove
 
 | File | What it proves |
 |---|---|
@@ -242,7 +242,7 @@ data/synthetic/   personas.json, documents.json and the synthetic PDFs, English 
 docs/             the documents listed above
 scripts/          start_ai.py, run_scenarios.py, probe_chat.py, stress_test.py, fuzz_chat.py, check_llm.py,
                   generate_synthetic_data.py
-tests/            531 tests
+tests/            537 tests
 logs/, runtime/   audit logs and the mock case store, created at runtime
 .env.example      settings (copied to .env by setup); .env is never shared because it can hold an API key
 ```

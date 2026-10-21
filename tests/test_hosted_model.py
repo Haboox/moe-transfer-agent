@@ -13,7 +13,7 @@ from agent.config import get_settings
 from agent.llm import HostedLLM, LLMError, host_name, make_llm
 
 S = replace(get_settings(), llm_provider="hosted", hosted_api_key="test-key", hosted_model="test/model",
-            hosted_url="https://api.groq.com/openai/v1", hosted_reasoning="", llm_timeout_seconds=5)
+            hosted_url="https://api.groq.com/openai/v1", hosted_reasoning="", llm_timeout_seconds=5, hosted_fallback=())
 
 
 class FakeResponse:
@@ -158,6 +158,9 @@ def test_the_wait_comes_from_the_header_or_the_message(monkeypatch):
     assert HostedLLM._wait_seconds(FakeResponse(429, text="Please try again in 7.5s.")) == 7.5
     assert HostedLLM._wait_seconds(FakeResponse(429, text="Please try again in 1m2.5s.")) == 62.5
     assert HostedLLM._wait_seconds(FakeResponse(429, text="slow down")) == 5.0
+    assert HostedLLM._wait_seconds(FakeResponse(429, text="Please try again in 30m.")) == 1800
+    assert HostedLLM._wait_seconds(FakeResponse(429, text="Please try again in 1h2m3s.")) == 3723
+    assert HostedLLM._wait_seconds(FakeResponse(429, text="Please try again in 450ms.")) == 5.0
 
 
 def test_a_long_limit_fails_at_once_and_later_calls_do_not_wait(calls, monkeypatch):
@@ -179,3 +182,41 @@ def test_host_names_for_labels():
     assert host_name("https://generativelanguage.googleapis.com/v1beta/openai/") == "gemini"
     assert host_name("https://example.org/v1") == "example.org"
     assert HostedLLM(S).name == "groq:test/model"
+
+
+# ------------------------------------------------------------------ backup models and the live status
+def test_a_used_up_model_hands_over_to_the_backup_model(calls):
+    sent, queue = calls
+    s2 = replace(S, hosted_fallback=("test/backup",))
+    queue += [FakeResponse(429, text="Rate limit reached on tokens per day. Please try again in 45m10s."),
+              ok_message(content="from backup")]
+    llm = HostedLLM(s2)
+    assert llm.chat("s", [{"role": "user", "content": "x"}], []).text == "from backup"
+    assert [x["json"]["model"] for x in sent] == ["test/model", "test/backup"] and llm.last_model == "test/backup"
+    queue.append(ok_message(content="again"))            # the paused main model is not asked again
+    llm.chat("s", [{"role": "user", "content": "y"}], [])
+    assert sent[-1]["json"]["model"] == "test/backup"
+
+
+def test_when_every_model_is_used_up_the_agent_is_told_when_it_is_back(calls):
+    sent, queue = calls
+    s2 = replace(S, hosted_fallback=("test/backup",))
+    queue += [FakeResponse(429, text="try again in 30m"), FakeResponse(429, text="try again in 1m30s")]
+    with pytest.raises(LLMError, match="about 2 min"):
+        HostedLLM(s2).chat("s", [{"role": "user", "content": "x"}], [])
+    assert len(sent) == 2
+
+
+def test_status_shows_requests_left_or_when_the_ai_is_back(monkeypatch):
+    from agent.llm import hosted_status
+    HostedLLM._blocked_until.clear()
+    s2 = replace(S, hosted_fallback=("test/backup",))
+    monkeypatch.setattr(llm_mod.requests, "get", lambda *a, **k: FakeResponse(200, {"data": [{"id": "test/model"}]}))
+    monkeypatch.setattr(llm_mod.requests, "post",
+                        lambda *a, **k: FakeResponse(200, {"choices": []}, headers={"x-ratelimit-remaining-requests": "812"}))
+    st = hosted_status(s2)
+    assert st["active"] == "test/model" and st["requests_left"] == 812
+    monkeypatch.setattr(llm_mod.requests, "post", lambda *a, **k: FakeResponse(429, text="try again in 40m"))
+    st = hosted_status(s2)
+    assert st["active"] == "" and st["paused"] == ["test/model", "test/backup"] and st["back_at"] > 0
+    HostedLLM._blocked_until.clear()

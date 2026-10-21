@@ -3,6 +3,37 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.15: AI allowance shown live, backup model, full test round (21 October, late)
+
+* **When is the AI back?** Demo controls now shows the hosted model's live state next to "AI model": "Ready, about N
+  requests left today", "Main model resting; using the backup model", or "AI paused until HH:MM (UAE time)". It asks
+  Groq with a one-token request at most once a minute ("Check again" asks at once). Groq's free plan per model:
+  30 requests and 8,000 tokens a minute, 1,000 requests and 200,000 tokens a day, as rolling windows; when a limit is
+  hit, Groq says exactly when to retry, and that time is shown. Waits written as "30m" or "1h2m3s" are read correctly.
+* **Backup model:** each Groq model has its own allowance, so when the main model's is used up the client asks the
+  next model in HOSTED_FALLBACK_MODELS (default openai/gpt-oss-20b) with the same request; only when every model is
+  paused does the agent answer without AI.
+
+Full test round in a browser (no AI, both languages): all 16 situations from start to finish in English and
+Arabic (same outcomes as the scenario tests); every payment refusal (declined, insufficient funds, invalid number,
+expired date, short CVV, no name) then a good card; real uploads (PDF, JPG, PNG, a broken PDF, an 11.5 MB file
+refused, a text file refused); the viewer on uploaded files; removing a file; blank, 600 character, HTML, SQL,
+hidden direction character and multi-line messages; dark mode and staff decisions mid-case; a wrong officer ID;
+the parent seeing the decision; clearing all cases; phone width (390 px) in both languages. Found and fixed:
+
+* Several files for one requirement were listed as "the passport, the passport and the passport": now "the passport
+  (3 files)" ("(ملفان)" for two in Arabic).
+* A PNG photo was labelled "(phone photo, JPG)": the label now names the real format.
+* At phone width the Arabic header's Parent | Staff switch was cut off and the evidence table made the page scroll
+  sideways: the switch now takes its own row and wide tables scroll inside their box.
+* The security scanner (bandit) flagged invisible text direction characters written literally in the fuzz test
+  (they are attack inputs on purpose, but a reviewer's scanner reads them as a "Trojan Source" risk): written as
+  escape codes now; the scanner reports no medium or high issue.
+* Every on-screen text is checked in both languages with the same placeholders, and every status, outcome, failure,
+  model and upload type has its words (new tests).
+
+Results (no AI, repeatable): 537 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations.
+
 ## Version 2.14: easier to use (21 October, night)
 
 * **Demo controls apply at once:** picking a situation, the AI model or a simulated problem starts the demonstration

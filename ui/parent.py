@@ -190,8 +190,8 @@ def _rules_table(agent: ServiceAgent, lang: str) -> str:
         f"<tr><td class='r'>{x.rule_id}</td><td class='{RULE_CLASS[x.status.value]}'>{escape(t('rs_' + x.status.value, lang))}</td>"
         f"<td>{escape((x.detail_ar or x.detail) if ar else x.detail)}</td><td class='muted'>{escape(x.source)}</td></tr>"
         for x in agent.state.rule_report.results)
-    return (f"<table class='rules'><tr><th>{t('rules_h_rule', lang)}</th><th>{t('rules_h_result', lang)}</th>"
-            f"<th>{t('rules_h_detail', lang)}</th><th>{t('rules_h_source', lang)}</th></tr>{rows}</table>")
+    return (f"<div class='tablewrap'><table class='rules'><tr><th>{t('rules_h_rule', lang)}</th><th>{t('rules_h_result', lang)}</th>"
+            f"<th>{t('rules_h_detail', lang)}</th><th>{t('rules_h_source', lang)}</th></tr>{rows}</table></div>")
 
 
 def _inner(agent: ServiceAgent, lang: str) -> None:

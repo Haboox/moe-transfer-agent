@@ -35,7 +35,7 @@ from ui.i18n import t  # noqa: E402
 from agent.countries import names, shown  # noqa: E402
 from agent.mocks import OPEN_ID  # noqa: E402
 from ui.session import (FAILURES, PROVIDERS, ai_status, base_settings, clear_cases, defaults,  # noqa: E402
-                        new_session, persona_ids, persona_story, persona_title)
+                        new_session, persona_ids, persona_story, persona_title, refresh_ai_status)
 from ui.theme import apply_streamlit_theme, css, logo_data_uri  # noqa: E402
 
 st.set_page_config(page_title="MoE | Equivalency Assistant (Prototype)", page_icon="assets/moe-favicon.png",
@@ -169,7 +169,7 @@ with r_ctrl:
         c1.markdown(f"<div class='muted'><span class='dot' style='background:{colour}'></span>{status}</div>",
                     unsafe_allow_html=True)
         if c2.button(t("dc_check", lang), width="stretch", type="tertiary", icon=":material/refresh:"):
-            ai_status.clear()
+            refresh_ai_status()
             st.rerun()
         if ss.provider == "ollama" and st.button(t("dc_load", lang), width="stretch"):
             from agent.llm import warm_up

@@ -162,7 +162,7 @@ def _evidence(rec, lang: str) -> str:
                  + escape(("تم التحقق" if ar else "verified") if not unconfirmed else
                           ("لم يتأكد" if ar else "not confirmed")) + "</span>"]
         body.append("<tr><td>" + "</td><td>".join(cells) + "</td></tr>")
-    return f"<table class='rules evidence'>{head}{''.join(body)}</table>" if body else ""
+    return f"<div class='tablewrap'><table class='rules evidence'>{head}{''.join(body)}</table></div>" if body else ""
 
 
 def _why_short(c, lang: str) -> str:

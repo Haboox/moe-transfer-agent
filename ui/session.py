@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import replace
+from datetime import datetime
 
 import streamlit as st
 
@@ -10,6 +11,7 @@ from uuid import uuid4
 
 from agent.agent import ServiceAgent
 from agent.config import RUNTIME_DIR, get_settings
+from agent.facts import UAE
 from agent.llm import LLMError, hosted_status, make_llm, ollama_status
 from agent.mocks import OPEN_ID, CaseStore, MockBackend
 from ui.i18n import t
@@ -154,6 +156,18 @@ def send(text: str, uploads: list[str]) -> None:
     ss.pending = (text, uploads)
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def _hosted_probe() -> dict:
+    """The hosted model's allowance, asked at most once a minute (each check is a one-token request)."""
+    return hosted_status(base_settings)
+
+
+def refresh_ai_status() -> None:
+    """"Check again" in Demo controls: ask the AI service now instead of using the last minute's answer."""
+    ai_status.clear()
+    _hosted_probe.clear()
+
+
 @st.cache_data(ttl=8, show_spinner=False)
 def ai_status(provider: str, lang: str) -> tuple[str, str]:
     """(colour, text) for the demo controls."""
@@ -163,14 +177,20 @@ def ai_status(provider: str, lang: str) -> tuple[str, str]:
     if provider == "anthropic":
         return ("#1E7A46", t("ai_key_ok", lang)) if base_settings.anthropic_api_key else ("#B42318", t("ai_no_key", lang))
     if provider == "hosted":
-        g = hosted_status(base_settings)
+        g = _hosted_probe()
         if not g["key"]:
             return "#B42318", t("ai_no_key", lang)
         if not g["ok"]:
             return "#B42318", t("ai_hosted_down", lang, d=g["detail"])
         if not g["model_listed"]:
             return "#B42318", t("ai_not_offered", lang, m=base_settings.hosted_model)
-        return "#1E7A46", t("ai_ready", lang, m=base_settings.hosted_model)
+        if not g["active"]:
+            back = datetime.fromtimestamp(g["back_at"], UAE).strftime("%H:%M") if g["back_at"] else "?"
+            return "#C08A00", t("ai_paused", lang, t=back)
+        left = t("ai_left", lang, n=g["requests_left"]) if g["requests_left"] is not None else ""
+        if g["active"] != base_settings.hosted_model:
+            return "#C08A00", t("ai_on_fallback", lang, m=g["active"]) + left
+        return "#1E7A46", t("ai_ready", lang, m=g["active"]) + left
     s = ollama_status(base_settings)
     if not s["running"]:
         return "#B42318", t("ai_not_running", lang)

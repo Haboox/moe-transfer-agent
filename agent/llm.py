@@ -202,7 +202,11 @@ class AnthropicLLM(BaseLLM):
 
 
 # ====================================================================== Hosted model (OpenAI style chat API)
-_WAIT_HINT = re.compile(r"try again in (?:(\d+)m)?([\d.]+)s", re.I)
+class _LongLimit(LLMError):
+    """A model's allowance is used up for longer than is worth waiting (the next model is tried)."""
+
+
+_WAIT_HINT = re.compile(r"try again in (?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?", re.I)
 
 
 def host_name(url: str) -> str:
@@ -218,7 +222,11 @@ class HostedLLM(BaseLLM):
     Free tiers limit tokens per minute and per day. A short limit (the service asks to wait 20 s or less) is waited
     out, at most 30 s in all per call. A long one (for example the daily allowance, "try again in 7m") fails at once,
     and the client remembers it: until that time every call fails at once too, so the agent falls back to its
-    no-AI replies instead of keeping the parent waiting (found live: a turn hung for minutes)."""
+    no-AI replies instead of keeping the parent waiting (found live: a turn hung for minutes).
+
+    Fallback models (HOSTED_FALLBACK_MODELS): each model has its own allowance on Groq, so when the main model's
+    allowance is used up, the next one in the list answers instead; only when every one is paused does the agent
+    fall back to its no-AI replies."""
 
     MAX_WAIT_S = 20.0           # longest single wait worth taking
     MAX_TOTAL_WAIT_S = 30.0     # longest total wait in one call
@@ -229,6 +237,8 @@ class HostedLLM(BaseLLM):
             raise LLMError("HOSTED_API_KEY is empty (in .env, or in the app's secrets online)")
         self.s = settings
         self.model = settings.hosted_model
+        self.models = [settings.hosted_model] + [m for m in settings.hosted_fallback if m != settings.hosted_model]
+        self.last_model = self.model
         self.name = f"{host_name(settings.hosted_url)}:{self.model}"
 
     @staticmethod
@@ -237,16 +247,37 @@ class HostedLLM(BaseLLM):
             return float(r.headers.get("retry-after"))
         except (TypeError, ValueError):
             m = _WAIT_HINT.search(r.text or "")
-            return (int(m.group(1) or 0) * 60 + float(m.group(2))) if m else 5.0
+            if not m or not any(m.groups()):
+                return 5.0
+            return int(m.group(1) or 0) * 3600 + int(m.group(2) or 0) * 60 + float(m.group(3) or 0)
+
+    @staticmethod
+    def paused_until(url: str, model: str) -> float:
+        """When a paused model is available again (epoch seconds), or 0 if it is not paused."""
+        until = HostedLLM._blocked_until.get(f"{url}|{model}", 0.0)
+        return until if until > time.time() else 0.0
 
     def _post(self, payload: dict) -> dict:
+        """Ask the first model whose allowance is not used up; a model that runs out mid-call is paused and the
+        next one is asked (same request)."""
+        who = host_name(self.s.hosted_url)
+        for model in self.models:
+            if self.paused_until(self.s.hosted_url, model):
+                continue
+            try:
+                data = self._post_model({**payload, "model": model})
+                self.last_model = model
+                return data
+            except _LongLimit:
+                continue
+        wait = min(self.paused_until(self.s.hosted_url, m) for m in self.models) - time.time()
+        raise LLMError(f"{who} usage limit reached; available again in about {max(int(wait // 60), 0) + 1} min")
+
+    def _post_model(self, payload: dict) -> dict:
         url = f"{self.s.hosted_url.rstrip('/')}/chat/completions"
         headers = {"Authorization": f"Bearer {self.s.hosted_api_key}", "Content-Type": "application/json"}
         who = host_name(self.s.hosted_url)
-        slot = f"{self.s.hosted_url}|{self.model}"
-        left = HostedLLM._blocked_until.get(slot, 0) - time.time()
-        if left > 0:
-            raise LLMError(f"{who} usage limit reached; available again in about {int(left // 60) + 1} min")
+        slot = f"{self.s.hosted_url}|{payload['model']}"
         r, waited, retries = None, 0.0, 0
         while True:
             try:
@@ -259,7 +290,7 @@ class HostedLLM(BaseLLM):
                 wait = max(self._wait_seconds(r), 1.0)
                 if wait > self.MAX_WAIT_S or waited + wait > self.MAX_TOTAL_WAIT_S:
                     HostedLLM._blocked_until[slot] = time.time() + wait
-                    raise LLMError(f"{who} usage limit reached; available again in about {int(wait // 60) + 1} min")
+                    raise _LongLimit(wait)
                 waited += wait
                 time.sleep(wait)
                 continue
@@ -338,19 +369,42 @@ class HostedLLM(BaseLLM):
 
 
 def hosted_status(settings: Settings) -> dict:
-    """Quick check for the app: is the key set, and does the service accept it and offer the model?"""
-    out = {"key": bool(settings.hosted_api_key), "ok": False, "model_listed": False, "detail": ""}
+    """For Demo controls: is the key accepted, which model answers now, how many requests are left today, and, when
+    every model is paused, when the AI is back. A one-token request per model (cheap), so the screen shows the truth
+    rather than a guess; the screen caches it for a minute."""
+    out = {"key": bool(settings.hosted_api_key), "ok": False, "model_listed": False, "detail": "", "active": "",
+           "requests_left": None, "back_at": 0.0, "paused": []}
     if not out["key"]:
         return out
+    base = settings.hosted_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {settings.hosted_api_key}"}
+    models = [settings.hosted_model] + [m for m in settings.hosted_fallback if m != settings.hosted_model]
     try:
-        r = requests.get(f"{settings.hosted_url.rstrip('/')}/models", timeout=5,
-                         headers={"Authorization": f"Bearer {settings.hosted_api_key}"})
+        r = requests.get(f"{base}/models", timeout=5, headers=headers)
         out["ok"] = r.ok
-        if r.ok:
-            ids = {str(m.get("id", "")).removeprefix("models/") for m in r.json().get("data", [])}
-            out["model_listed"] = settings.hosted_model.removeprefix("models/") in ids
-        else:
+        if not r.ok:
             out["detail"] = str(r.status_code)
+            return out
+        ids = {str(m.get("id", "")).removeprefix("models/") for m in r.json().get("data", [])}
+        out["model_listed"] = settings.hosted_model.removeprefix("models/") in ids
+        for model in models:
+            until = HostedLLM.paused_until(settings.hosted_url, model)
+            if not until:
+                p = requests.post(f"{base}/chat/completions", headers=headers, timeout=10,
+                                  json={"model": model, "messages": [{"role": "user", "content": "ok"}], "max_tokens": 1})
+                if p.status_code == 429:
+                    wait = HostedLLM._wait_seconds(p)
+                    if wait > HostedLLM.MAX_WAIT_S:
+                        HostedLLM._blocked_until[f"{settings.hosted_url}|{model}"] = until = time.time() + wait
+                elif p.ok:
+                    out["active"] = model
+                    left = p.headers.get("x-ratelimit-remaining-requests")
+                    out["requests_left"] = int(left) if left and left.isdigit() else None
+                    break
+            if until:
+                out["paused"].append(model)
+        if not out["active"]:
+            out["back_at"] = min((HostedLLM.paused_until(settings.hosted_url, m) for m in models), default=0.0)
     except (requests.exceptions.RequestException, ValueError) as e:
         out["detail"] = e.__class__.__name__
     return out

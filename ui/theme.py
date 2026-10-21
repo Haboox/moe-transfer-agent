@@ -189,4 +189,15 @@ div[data-testid="stPopover"] button, div[data-testid="stPopoverButton"] {{ white
   .step {{ white-space:normal; overflow:visible; line-height:1.2; font-size:.68rem; padding:7px 2px;
            word-break:keep-all; overflow-wrap:normal; hyphens:none; }}
 }}
+/* phones: the Parent | Staff switch gets its own full row, wide tables scroll inside their box */
+@media (max-width: 640px) {{
+  [data-testid="stHorizontalBlock"]:has(.brand) > [data-testid="stColumn"]:nth-child(2) {{ flex:1 1 100% !important;
+      min-width:100% !important; order:3; }}
+  [data-testid="stHorizontalBlock"]:has(.brand) > [data-testid="stColumn"]:first-child {{ flex:1 1 auto !important;
+      min-width:0 !important; }}
+  .tablewrap {{ overflow-x:auto; }}
+  .timeline .ev {{ grid-template-columns:62px 1fr; }} .timeline .what, .timeline .why {{ grid-column:1 / -1; }}
+  div.svc-title {{ font-size:1.5rem; }}
+}}
+.tablewrap {{ max-width:100%; overflow-x:auto; }}
 </style>"""

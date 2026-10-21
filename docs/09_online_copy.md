@@ -32,6 +32,7 @@ LLM_PROVIDER = "hosted"
 HOSTED_API_KEY = "the key from the model service"
 HOSTED_URL = "https://api.groq.com/openai/v1"
 HOSTED_MODEL = "openai/gpt-oss-120b"
+HOSTED_FALLBACK_MODELS = "openai/gpt-oss-20b"   # used when the main model's allowance is used up
 MOE_ONLINE = "1"                 # hides the local model option (there is none online)
 APP_PASSCODE = "a code you choose" # asked before the portal opens; leave out for no code
 ```
@@ -49,6 +50,14 @@ a Gemini model name in `HOSTED_MODEL`, with a Gemini API key.
    wake.
 
 ## Limits to know
+
+Groq's free plan, per model (October 2026): 30 requests and 8,000 tokens a minute, 1,000 requests and 200,000
+tokens a day. One full parent session uses about 25,000 tokens, so about eight full demonstrations a day on the main
+model, then the backup model takes over with its own allowance. **Demo controls shows the live state next to the
+AI model:** "Ready, about N requests left today", "Main model resting; using the backup model", or "AI paused until
+HH:MM" (Groq says exactly when to retry; the allowance comes back gradually, as a rolling window). While paused, the
+portal still works without AI (answers from the service card and the case record, documents checked, payment,
+submission, officer referral) and says so in the reply.
 
 * Free model tiers limit tokens per minute and per day. One full parent session (question, documents, payment) uses
   about 12 model calls and 25,000 tokens (measured on the local logs). When a limit is reached the portal waits as

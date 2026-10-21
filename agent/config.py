@@ -53,6 +53,7 @@ class Settings:
     hosted_model: str = "openai/gpt-oss-120b"
     hosted_reasoning: str = ""              # sent as reasoning_effort when set (depends on the model)
     hosted_context: int = 131072
+    hosted_fallback: tuple = ()             # other models to use when the main one's allowance is used up
 
 
 def get_settings() -> Settings:
@@ -78,4 +79,6 @@ def get_settings() -> Settings:
         hosted_model=os.getenv("HOSTED_MODEL", "openai/gpt-oss-120b").strip(),
         hosted_reasoning=os.getenv("HOSTED_REASONING", "").strip().lower(),
         hosted_context=int(os.getenv("HOSTED_CONTEXT", "131072")),
+        hosted_fallback=tuple(m.strip() for m in os.getenv("HOSTED_FALLBACK_MODELS", "openai/gpt-oss-20b").split(",")
+                              if m.strip()),
     )
