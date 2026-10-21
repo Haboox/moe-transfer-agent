@@ -2,7 +2,7 @@
 
 Decision workflow (D-02): the agent never decides equivalency. The case list shows what needs a decision first: the
 exceptions the rules could not decide, then the submitted cases that passed every automated check; an officer decides
-both. Every request reaching an officer is paid for first (D-06), except one sent because a system was down.
+both. Every request reaching an officer is paid for first (D-06), one sent because a system was down included.
 
 Layout: summary tiles; the case list on the left; the open case on the right, top to bottom: what needs deciding,
 the evidence (with every document viewable on the page), the AI summary (labelled), the timeline of what happened,

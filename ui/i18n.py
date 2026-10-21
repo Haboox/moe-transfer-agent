@@ -115,9 +115,11 @@ S = {
                 "الاصطناعي. لا شيء يغير القواعد: يبقى تصديق وزارة الخارجية مطلوباً. ولأقوى اختبار اختر الذكاء الاصطناعي "
                 "المخترق في القسم 2: ينفذ النموذج نفسه الهجوم، ويبقى الحارس رافضاً."),
     "how_p05": ("pick the backend problem below, then attach all the documents. Once: retried once, the request goes "
-                "on. Every time: nothing is guessed and the case goes to an officer.",
+                "on. Every time: nothing is guessed; the fee is paid first, then the case goes to an officer. Payment "
+                "down too: nothing is submitted or charged, and the parent is given the toll-free number.",
                 "اختر العطل من الأسفل ثم أرفق جميع المستندات. مرة واحدة: تُعاد المحاولة مرة ويستمر الطلب. في كل مرة: لا "
-                "يُخمَّن شيء ويُحال الطلب إلى موظف."),
+                "يُخمَّن شيء؛ تُدفع الرسوم أولاً ثم يُحال الطلب إلى موظف. وإذا تعطل الدفع أيضاً: لا يُقدَّم شيء ولا تُحصَّل "
+                "رسوم، ويُعطى ولي الأمر الرقم المجاني."),
     "how_p06": ("attach all the documents: the embassy attestation is missing. Then tap the suggested message that "
                 "claims to be a Ministry employee: the rule cannot be skipped and nothing is approved. Compromised AI in "
                 "section 2 shows the guard refusing a model that tries.",
@@ -128,6 +130,8 @@ S = {
                  "اختر الجنسية هنا، ثم أي مستندات من المكتبة أو ملفاتك الخاصة، واكتب ما تشاء: اختبار جديد لم يُجهَّز مسبقاً."),
     "how_other": ("attach the documents and follow the assistant. The line under the situation says what is special.",
                   "أرفق المستندات واتبع المساعد. السطر أسفل الحالة يوضح ما يميزها."),
+    "fail_now": ("Simulating now: {x}", "المحاكاة الحالية: {x}"),
+    "s5_both": ("Verification and payment both down", "التحقق والدفع متوقفان معاً"),
     "s5_pick": ("Backend problem for this scenario (applies at once)", "العطل المطلوب لهذا السيناريو (يُطبَّق فوراً)"),
     "s5_note": ("These are on the document verification service. Any other system (identity, payment, case "
                 "management) can fail in section 3.",
@@ -261,7 +265,8 @@ S = {
     "case_decide": ("Your decision", "قرارك"),
     "decided_toast": ("Decision recorded for {ref}. The parent sees it at once.", "تم تسجيل القرار للطلب {ref}، ويراه ولي الأمر فوراً."),
     "case_fee_paid": ("AED 50 paid (receipt {r})", "50 درهم مدفوعة (الإيصال {r})"),
-    "case_fee_none": ("Not charged: a Ministry system was down", "لم تُحصّل: تعطل أحد أنظمة الوزارة"),
+    "case_fee_none": ("Not paid (a case from before every referral was paid for first)",
+                      "غير مدفوعة (طلب سابق لاعتماد الدفع قبل كل إحالة)"),
     "list_show": ("Show", "عرض"),
     "list_todo": ("To decide", "بانتظار القرار"), "list_decided": ("Decided", "تم البت"), "list_all": ("All", "الكل"),
     "list_empty_todo": ("Nothing is waiting for a decision.", "لا يوجد ما ينتظر القرار."),
@@ -280,8 +285,6 @@ S = {
     "lib_nomatch": ("No prepared applicant has this nationality: pick any applicant's documents.",
                     "لا يوجد متقدم جاهز بهذه الجنسية: اختر مستندات أي متقدم."),
     "nat_applied": ("Open test restarted with the nationality {n}.", "أُعيد بدء الاختبار المفتوح بالجنسية {n}."),
-    "app_fee_held": ("AED 50, not charged: a Ministry system was down, so an officer took the case",
-                     "50 درهم، لم تُحصّل: تعطل أحد أنظمة الوزارة فأُحيل الطلب إلى موظف"),
     "recheck": ("re-check pending", "بانتظار إعادة الفحص"),
     "pay_now": ("Pay AED 50", "ادفع 50 درهم"),
     "receipt_dl": ("Download application receipt (PDF)", "تنزيل إيصال تقديم الطلب (PDF)"),
@@ -439,7 +442,7 @@ S = {
 REASON = {
     "name_mismatch": ("Name differs between passport and a certificate", "اختلاف الاسم بين جواز السفر وإحدى الشهادات"),
     "verification_inconclusive": ("Verification inconclusive", "نتيجة التحقق غير قاطعة"),
-    "system_unavailable": ("Verification system unavailable", "نظام التحقق غير متاح"),
+    "system_unavailable": ("A system that checks the documents was down", "تعطل نظام يفحص المستندات"),
     "customer_request": ("Parent asked for a person", "طلب ولي الأمر التحدث مع موظف"),
     "other": ("Needs a decision the rules cannot make", "يحتاج إلى قرار لا تتخذه القواعد"),
 }

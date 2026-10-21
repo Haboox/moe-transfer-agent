@@ -401,8 +401,8 @@ class ServiceAgent:
         s, ctx = self.state, self.ctx
         if s.payment_request is None or s.status != CaseStatus.AWAITING_PAYMENT:
             return False, "no_payment_open"
-        if s.rules_stale or not (s.rule_report and s.rule_report.outcome in (Outcome.ELIGIBLE, Outcome.HUMAN_REVIEW)):
-            return False, "rules_not_current"             # R-12: pay only on a current ELIGIBLE (or D-06 review) outcome
+        if not s.payable():
+            return False, "rules_not_current"             # R-12 and D-06: pay only when the request can go forward
         try:
             raw = self.backend.payment_pay(s.payment_request.payment_id, method, card,
                                            today=self.settings.application_date)
@@ -614,10 +614,24 @@ class ServiceAgent:
         if s.is_closed():
             return False
         code = None
-        if s.failed_verifications or ("get_applicant_profile" in self._systems_down(events_before) and s.uploads):
-            # the identity or verification system failed after its retry: the documents cannot be checked, so an
-            # officer takes over (P-03). A payment or case system outage is different: the parent is told, and the
-            # next message retries (an officer cannot take the fee, and a paid parent must not pay twice).
+        if s.system_outage():
+            # The identity or verification system failed after its retry: the documents cannot be checked, so an
+            # officer checks them instead (P-03). Like every request reaching an officer, it is paid for first
+            # (D-06, widened 22 October: found in the demo, an outage case reached the officer with no fee and no
+            # chance to pay). The payment window opens here; the referral follows once the fee is paid. If the
+            # payment gateway is down too, request_payment fails: nothing is submitted and the parent is given the
+            # toll-free number (the reply below). A case system outage after payment: told, and the next message
+            # retries without a second payment.
+            if s.receipt is None:
+                opened = False
+                if s.payment_request is None and s.status != CaseStatus.AWAITING_PAYMENT \
+                        and "request_payment" not in self._systems_down(events_before):   # not twice in one turn
+                    run_tool(self.ctx, "request_payment", {}, requested_by="D-06")
+                    opened = s.status == CaseStatus.AWAITING_PAYMENT
+                if s.receipt is None:
+                    # the window is open (the reply explains it), or the gateway is down (the reply says so); a
+                    # question asked while the window is already open is answered as usual
+                    return opened
             code, basis = "system_unavailable", "P-03"
         elif s.rule_report and not s.rules_stale and s.rule_report.outcome == Outcome.HUMAN_REVIEW and s.receipt:
             # D-06: paid first, then the officer reviews (an unpaid case gets the payment window from P-13)

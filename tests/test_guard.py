@@ -144,10 +144,22 @@ def test_escalation_allowed_when_rule_says_review(make_ctx):
     assert rec.receipt_id == ctx.state.receipt.receipt_id and rec.status.value == "PENDING_HUMAN_REVIEW"
 
 
-def test_a_system_failure_reaches_an_officer_without_payment(make_ctx):
+def test_a_system_failure_reaches_an_officer_only_after_payment(make_ctx):
+    """D-06, widened 22 October: an outage case is submitted like any other, so it is paid for first."""
     ctx = make_ctx(persona="SYN-P05")
     run_tool(ctx, "get_applicant_profile", {})
     _upload_all(ctx)
     ctx.state.failed_verifications = {ctx.state.uploads[0].doc_id: "timeout"}
-    assert ctx.state.receipt is None
+    assert ctx.state.receipt is None and ctx.state.system_outage() and ctx.state.payable()
+    blocked = run_tool(ctx, "escalate_to_human", {"reason_code": "system_unavailable"})
+    assert blocked["status"] == "blocked" and "fee must be paid" in blocked["reason"]
+    assert run_tool(ctx, "request_payment", {})["status"] == "ok"          # allowed: an officer will check them
     assert run_tool(ctx, "escalate_to_human", {"reason_code": "system_unavailable"})["status"] == "ok"
+    assert ctx.backend.cases.get(ctx.state.case_ref).receipt_id == ctx.state.receipt.receipt_id
+
+
+def test_no_payment_without_documents_or_a_reason(make_ctx):
+    ctx = make_ctx(persona="SYN-P05")
+    ctx.state.failed_systems = ["get_applicant_profile"]          # identity down, but nothing attached
+    assert not ctx.state.system_outage() and not ctx.state.payable()
+    assert run_tool(ctx, "request_payment", {})["status"] == "blocked"

@@ -61,7 +61,7 @@ def _application_card(agent: ServiceAgent, lang: str) -> None:
     rows += [(t("app_ref", lang), escape(s.case_ref or t("app_ref_none", lang))),
              (t("app_rules", lang), escape(rules_txt)),
              (t("app_fee", lang), t("app_fee_paid", lang) if s.receipt else
-              t("app_fee_held", lang) if s.status == CaseStatus.PENDING_HUMAN_REVIEW else t("app_fee_unpaid", lang))]
+              t("app_fee_unpaid", lang))]
     st.markdown("<div class='card'><div class='h4' role='heading' aria-level='4'>" + escape(t("app_title", lang)) + "</div><div class='kv'>"
                 + "".join(f"<div class='k'>{k}</div><div class='v'>{v}</div>" for k, v in rows)
                 + "</div></div>", unsafe_allow_html=True)

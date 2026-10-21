@@ -36,7 +36,7 @@ from agent.countries import names, shown  # noqa: E402
 from agent.mocks import OPEN_ID  # noqa: E402
 from ui.session import (MODES, PROVIDERS, S5_PICKS, SCENARIO_FAILURE, SYSTEMS, ai_status, base_settings,  # noqa: E402
                         bind, clear_cases, defaults, fail_label, fail_parts, new_session, persona_detail,
-                        persona_ids, persona_story, refresh_ai_status, turn_flags, valid_setup)
+                        persona_ids, persona_story, refresh_ai_status, s5_label, turn_flags, valid_setup)
 from ui.theme import apply_streamlit_theme, css, logo_data_uri  # noqa: E402
 
 st.set_page_config(page_title="MoE | Equivalency Assistant (Prototype)", page_icon="assets/moe-favicon.png",
@@ -175,7 +175,7 @@ with r_ctrl:
                 # Scenario 5 of the brief: the backend problem is chosen right here, one click, applied at once
                 k = bind("dc_s5", ss.failure if ss.failure in S5_PICKS else None)
                 st.pills(t("s5_pick", lang), S5_PICKS, key=k, selection_mode="single",
-                         format_func=lambda f: t("mode_" + fail_parts(f)[1], lang), on_change=apply_now,
+                         format_func=lambda f: s5_label(f, lang), on_change=apply_now,
                          args=("s5", k))
                 st.caption(t("s5_note", lang))
             if ss.persona == OPEN_ID:
@@ -237,6 +237,8 @@ with r_ctrl:
         k = bind("dc_fmode", mode or MODES[0])
         f2.selectbox(t("dc_fmode", lang), MODES, key=k, on_change=apply_now, args=("mode", k),
                      format_func=lambda x: t("mode_" + x, lang), disabled=system == "none")
+        if ss.failure != "none":
+            st.caption(t("fail_now", lang, x=fail_label(ss.failure, lang)))
         ss.show_inner = st.toggle(t("dc_inner", lang), value=ss.show_inner, help=t("dc_inner_help", lang))
 
         st.divider()

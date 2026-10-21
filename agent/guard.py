@@ -82,16 +82,18 @@ def check(ctx: AgentContext, name: str, raw_args: Any) -> GuardDecision:
         if s.unverified_ids():
             return _block("P-02", f"verify these documents first: {s.unverified_ids()}")
         if s.failed_verifications:
-            return _block("P-03", "verification failed for some documents; escalate with "
-                                  "reason_code=system_unavailable instead of evaluating")
+            return _block("P-03", "verification failed for some documents, so the rules cannot run: an officer "
+                                  "checks them instead. The fee is paid first (request_payment), then "
+                                  "escalate_to_human with reason_code=system_unavailable")
     elif name == "request_payment":
         if s.receipt is not None:
             return _block("P-02", "fee already paid")
         if s.payment_request is not None:
             return _block("P-02", "the payment window is already open; ask the customer to complete the payment there")
-        if not (_rules_fresh_and(ctx, Outcome.ELIGIBLE) or _rules_fresh_and(ctx, Outcome.HUMAN_REVIEW)):
-            return _block("R-12", "payment is only requested after the rules return ELIGIBLE (or HUMAN_REVIEW, "
-                                  "D-06: paid before the officer reviews) on the latest documents")
+        if not s.payable():
+            return _block("R-12", "payment is only requested after the rules return ELIGIBLE or HUMAN_REVIEW on the "
+                                  "latest documents, or when a checking system is down and an officer will check "
+                                  "them (D-06: every request reaching an officer is paid for first)")
     elif name == "submit_application":
         if not _rules_fresh_and(ctx, Outcome.ELIGIBLE):
             return _block("P-01", "submission requires a current ELIGIBLE rules outcome")
@@ -129,8 +131,9 @@ def _escalation_grounds_missing(ctx: AgentContext, reason: str) -> str:
     elif reason == "other":
         if not (fresh and s.rule_report.outcome == Outcome.HUMAN_REVIEW):
             return "reason 'other' needs a current HUMAN_REVIEW rules outcome."
-    if reason != "system_unavailable" and s.receipt is None:
-        # D-06 (decided 21 October): a request the rules send to an officer is submitted like any other, so the
-        # AED 50 fee is paid first. Only a system failure reaches an officer unpaid (nothing could be checked).
+    if s.receipt is None:
+        # D-06 (decided 21 October, widened 22 October): every request that reaches an officer is submitted like any
+        # other, so the AED 50 fee is paid first, whatever the reason, a system outage included. If the payment
+        # gateway is down too, nothing is submitted: the parent is told and given the toll-free number.
         return "the AED 50 fee must be paid before the request goes to an officer (D-06): call request_payment first."
     return ""

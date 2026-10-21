@@ -196,6 +196,18 @@ class CaseState(BaseModel):
         return [u.doc_id for u in self.uploads
                 if u.doc_id not in self.verifications and u.doc_id not in self.failed_verifications]
 
+    def system_outage(self) -> bool:
+        """A Ministry system that checks the documents (document verification, or the identity record) stayed down
+        after its retry while the parent has documents attached. Nothing is guessed: a Ministry officer checks them
+        instead (P-03), and like every request that reaches an officer it is paid for first (D-06)."""
+        return bool(self.uploads) and bool(self.failed_verifications or "get_applicant_profile" in self.failed_systems)
+
+    def payable(self) -> bool:
+        """R-12 and D-06: the fee is asked for only when the request can go forward: the rules say ELIGIBLE or
+        HUMAN_REVIEW on the latest documents, or a checking system is down and an officer will check them."""
+        fresh = self.rule_report is not None and not self.rules_stale
+        return (fresh and self.rule_report.outcome in (Outcome.ELIGIBLE, Outcome.HUMAN_REVIEW)) or self.system_outage()
+
     def is_closed(self) -> bool:
         return self.status in {CaseStatus.SUBMITTED, CaseStatus.PENDING_HUMAN_REVIEW,
                                CaseStatus.HUMAN_APPROVED, CaseStatus.HUMAN_REJECTED}

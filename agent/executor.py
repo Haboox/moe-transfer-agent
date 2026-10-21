@@ -119,7 +119,8 @@ def run_tool(ctx: AgentContext, name: str, raw_args: Any, requested_by: str = "m
         ctx.stats["tool_failed"] += 1
         result = {"status": "failed", "system": f.system, "error": f.outcome,
                   "advice": "The system is unavailable after a retry. Do not guess a result. "
-                            "Escalate to a human with reason_code=system_unavailable."}
+                            "A Ministry officer checks the documents instead: the fee is paid first "
+                            "(request_payment), then escalate_to_human with reason_code=system_unavailable."}
         status = "failed"
         if name not in ctx.state.failed_systems:
             ctx.state.failed_systems.append(name)          # grounds a system_unavailable escalation (P-09)

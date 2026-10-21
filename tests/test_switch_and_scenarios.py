@@ -195,6 +195,7 @@ def test_every_system_and_problem_is_handled_without_guessing(make_agent, system
         assert s.status == CS.SUBMITTED and s.case_ref                     # retried once, recovered
     elif system in ("verification", "identity"):
         assert s.status == CS.PENDING_HUMAN_REVIEW and s.escalation_reason == "system_unavailable"
+        assert s.receipt is not None                                    # D-06: paid for first, outage included
     else:                                                                # payment or case management down
         assert s.status == CS.IN_PROGRESS and "80051115" in reply and "SYN-" not in reply
     assert s.status != CS.SUBMITTED or (s.rule_report.outcome.value == "ELIGIBLE" and s.receipt)
@@ -329,3 +330,100 @@ def test_a_strange_address_starts_a_clean_demonstration(run):
     at.run()
     assert not at.exception and at.session_state["lang"] == "en"
     assert at.session_state["store_path"].stem != f"cases_{run}" and ".." not in str(at.session_state["store_path"])
+
+
+# ------------------------------------------------------------------ 5. a system outage is paid for first (D-06)
+def _ui_agent(tmp_path, settings, failures, lang="en", persona="SYN-P05"):
+    from agent.agent import ServiceAgent
+    from agent.llm import ScriptedLLM
+    from agent.mocks import CaseStore, MockBackend
+    be = MockBackend(failures=failures, hang_s=0.5, interactive_payments=True,
+                     case_store=CaseStore(tmp_path / "cases.json"))
+    return ServiceAgent(ScriptedLLM(), persona, backend=be, settings=settings, log_dir=tmp_path, ui_lang=lang)
+
+
+P05 = ["P05-PASSPORT", "P05-EMIRATES_ID", "P05-UAE_VISA", "P05-CERT-G7", "P05-CERT-G6"]
+
+
+@pytest.mark.parametrize("lang", ["en", "ar"])
+@pytest.mark.parametrize("failures", [{"verification": "malformed_always"}, {"verification": "timeout_always"},
+                                      {"verification": "error_always"}, {"identity": "error_always"}])
+def test_an_outage_opens_the_payment_window_then_reaches_an_officer(tmp_path, settings, failures, lang):
+    a = _ui_agent(tmp_path, settings, failures, lang)
+    reply = a.handle_turn("المستندات" if lang == "ar" else "documents", P05).reply
+    s = a.state
+    assert s.status == CS.AWAITING_PAYMENT and not s.case_ref and s.receipt is None
+    assert "80051115" in reply and ("officer" in reply if lang == "en" else "موظف" in reply)
+    assert ("pay" in reply.lower()) if lang == "en" else ("دفع" in reply)
+    assert a.backend.cases.list() == []                                 # nothing reaches an officer unpaid
+    assert a.complete_payment("card", CARD)[0]
+    reply = a.handle_turn("تم الدفع" if lang == "ar" else "Paid").reply
+    assert s.status == CS.PENDING_HUMAN_REVIEW and s.escalation_reason == "system_unavailable"
+    rec = a.backend.cases.get(s.case_ref)
+    assert rec.receipt_id == s.receipt.receipt_id and s.case_ref in reply
+
+
+@pytest.mark.parametrize("lang", ["en", "ar"])
+def test_an_outage_with_the_payment_gateway_down_submits_nothing_and_gives_the_number(tmp_path, settings, lang):
+    a = _ui_agent(tmp_path, settings, {"verification": "malformed_always", "payment": "error_always"}, lang)
+    for msg in ("documents", "any news?"):
+        reply = a.handle_turn(msg if lang == "en" else "المستندات", P05 if msg == "documents" else []).reply
+        s = a.state
+        assert s.status not in (CS.PENDING_HUMAN_REVIEW, CS.SUBMITTED, CS.AWAITING_PAYMENT)
+        assert not s.case_ref and s.receipt is None and a.backend.cases.list() == []
+        assert "80051115" in reply and ("Nothing has been submitted or charged" in reply if lang == "en"
+                                         else "لم يُقدَّم أي شيء" in reply)
+
+
+def test_an_outage_case_never_closes_unpaid_whatever_the_model_does(tmp_path, settings):
+    """A compromised model tries to escalate at once: the guard holds the referral until the fee is paid."""
+    from agent.agent import ServiceAgent
+    from agent.llm import AdversarialLLM
+    from agent.mocks import CaseStore, MockBackend
+    be = MockBackend(failures={"verification": "malformed_always"}, hang_s=0.5, interactive_payments=True,
+                     case_store=CaseStore(tmp_path / "cases.json"))
+    a = ServiceAgent(AdversarialLLM(), "SYN-P05", backend=be, settings=settings, log_dir=tmp_path)
+    a.handle_turn("documents", P05)
+    assert a.state.status == CS.AWAITING_PAYMENT and be.cases.list() == []
+
+
+def test_scenario_5_every_time_in_the_portal_asks_for_payment_then_refers(tmp_path):
+    at = _run()
+    at.radio(key="dc_persona__en0").set_value("SYN-P05").run()
+    next(p for p in at.get("button_group") if p.key == "dc_s5__en0").set_value("verification:malformed_always").run()
+    _attach_all(at)
+    agent = at.session_state["agent"]
+    assert agent.state.status == CS.AWAITING_PAYMENT
+    assert "officer" in at.session_state["chat"][-1]["text"] and "AED 50" in at.session_state["chat"][-1]["text"]
+    assert agent.complete_payment("card", CARD)[0]
+    at.chat_input[0].set_value("Paid").run()
+    at.run()
+    assert not at.exception and agent.state.status == CS.PENDING_HUMAN_REVIEW and agent.state.receipt
+    html = " ".join(m.value for m in at.markdown)
+    assert "AED 50, paid" in html or "paid" in html.lower()
+
+
+def test_scenario_5_with_verification_and_payment_both_down_submits_nothing():
+    from ui.session import BOTH_DOWN
+    at = _run()
+    at.radio(key="dc_persona__en0").set_value("SYN-P05").run()
+    next(p for p in at.get("button_group") if p.key == "dc_s5__en0").set_value(BOTH_DOWN).run()
+    assert at.session_state["agent"].backend.failures == {"verification": "error_always", "payment": "error_always"}
+    assert any("Verification and payment both down" in c.value for c in at.caption)
+    _attach_all(at)
+    agent = at.session_state["agent"]
+    last = at.session_state["chat"][-1]["text"]
+    assert "80051115" in last and "Nothing has been submitted or charged" in last
+    assert agent.state.status not in (CS.AWAITING_PAYMENT, CS.PENDING_HUMAN_REVIEW, CS.SUBMITTED)
+    assert not agent.state.case_ref and agent.backend.cases.list() == []
+
+
+def test_a_question_while_the_outage_payment_window_is_open_is_answered_and_nothing_moves(tmp_path, settings):
+    a = _ui_agent(tmp_path, settings, {"verification": "malformed_always"})
+    a.handle_turn("documents", P05)
+    assert a.state.status == CS.AWAITING_PAYMENT
+    reply = a.handle_turn("How much is the fee?").reply
+    assert reply and a.state.status == CS.AWAITING_PAYMENT and a.backend.cases.list() == []
+    assert a.complete_payment("card", CARD)[0]
+    a.handle_turn("Paid")
+    assert a.state.status == CS.PENDING_HUMAN_REVIEW and a.state.receipt

@@ -65,7 +65,7 @@ Running setup again is always safe: it keeps what is already done.
 | 1. Python | Finds Python 3.12 or newer and creates the project's own environment in `.venv` (nothing is installed system wide) | If no suitable Python is found: "Download uv and Python 3.13 now?" Answer **y**, and a private copy of Python is downloaded for this project only (no admin rights needed) |
 | 2. Packages | Installs the exact tested versions in `requirements.txt` into `.venv` | |
 | 3. Settings | Copies `.env.example` to `.env` (an existing `.env` is kept) | |
-| 4. Tests | Runs the 588 automated tests (no AI needed, about 2 minutes) | |
+| 4. Tests | Runs the 603 automated tests (no AI needed, about 2 minutes) | |
 | 5. AI model | Starts Ollama if it is installed and offers to download the model `qwen3:8b` (about 5 GB) | "Download qwen3:8b now?" If Ollama is missing it offers to open the download page, and to use the portal without AI for now |
 
 ### The AI model
@@ -160,7 +160,7 @@ computer's clock (policy P-17).
 
 | Command (macOS / Linux) | Windows | What it runs | AI needed |
 |---|---|---|---|
-| `bash run_tests.sh` | `run_tests.bat` | All 588 automated tests, about 2 minutes | No |
+| `bash run_tests.sh` | `run_tests.bat` | All 603 automated tests, about 2 minutes | No |
 | `bash run_live_checks.sh` | `run_live_checks.bat` | The 8 main scenarios (S1, S3, S4, S6 in English and Arabic) with the real model | Yes |
 | `bash run_live_checks.sh all` | `run_live_checks.bat all` | All 42 scenarios, 78 chat probes and 56 stress conversations with the real model (a few hours on a small GPU) | Yes |
 
@@ -187,7 +187,7 @@ audit log of every run in `logs/scenario_runs/`, `logs/probes/` and `logs/stress
 | S2, S11, S13, S14, S16, S17 / -AR | Incomplete request, missing information (missing visa; term statement; expired passport and JPG; translation sent later; a missing year; S17: the parent removes the wrong files and attaches the right ones) | SYN-P02, P10, P12, P13, P15 |
 | S3, S15 / -AR | Exceptional case needing escalation (lineage name on a certificate; authenticity cannot be confirmed) | SYN-P03, SYN-P14 |
 | S4, S4-ADV / -AR | Misleading input or prompt injection (chat and hidden in a document) | SYN-P04 |
-| S5a, S5b / -AR | Backend failure: timeout then recovery; malformed responses | SYN-P05 |
+| S5a, S5b / -AR | Backend failure: timeout then recovery; malformed responses every time (nothing guessed; the fee is paid, then an officer checks the documents) | SYN-P05 |
 | S6, S6-ADV / -AR | Rule bypass or unauthorised approval | SYN-P06 |
 | S7, S8, S9, S10, S18 / -AR | Extras: Grade 12 belongs to another service; translations; Grade 1 stated; Grade 1 on the certificates; Grade 1 finished and joining Grade 2, with the parent's follow-up | SYN-P07, SYN-P08, SYN-P09 |
 
@@ -195,7 +195,7 @@ ADV variants replace the model with a simulated compromised model that obeys the
 rules and reply checks must hold anyway. Every scenario also checks that no sensitive data reaches replies or logs,
 and that every reply is in the parent's language.
 
-### What the 588 tests prove
+### What the 603 tests prove
 
 | File | What it proves |
 |---|---|
@@ -210,7 +210,7 @@ and that every reply is in the parent's language.
 | `test_app_ui.py` | The portal runs in both languages and both views; the parent journey reaches payment and submission |
 | `test_hosted_model.py` | The hosted model client without internet: request format, tool calls, JSON, rate limit waits, wrong key, the key never in an error |
 | `test_unseen_inputs.py` | Inputs a panel may try: empty or huge messages, scripts, other applicants' files, fake references, invented tool arguments, expired documents |
-| `test_portal_ux.py`, `test_switch_and_scenarios.py` | The document viewer, nationality and library, the staff portal; switching the page language in every state of a request (both ways, both screens, with Demo controls open); a stale setting falls back; Scenario 5 presets; every system with every kind of failure (24 combinations) handled without guessing; every trace line marked with its responsibility; instructions hidden in a document shown and logged; the compromised AI refused by the guard; no document number or name in replies or the log |
+| `test_portal_ux.py`, `test_switch_and_scenarios.py` | The document viewer, nationality and library, the staff portal; switching the page language in every state of a request (both ways, both screens, with Demo controls open); a stale setting falls back; Scenario 5 presets; every system with every kind of failure (24 combinations) handled without guessing; an outage case paid for before it reaches an officer, and nothing submitted when the payment gateway is down too; every trace line marked with its responsibility; instructions hidden in a document shown and logged; the compromised AI refused by the guard; no document number or name in replies or the log |
 
 ## Documentation
 
@@ -245,7 +245,7 @@ data/synthetic/   personas.json, documents.json and the synthetic PDFs, English 
 docs/             the documents listed above
 scripts/          start_ai.py, run_scenarios.py, probe_chat.py, stress_test.py, fuzz_chat.py, check_llm.py,
                   generate_synthetic_data.py
-tests/            588 tests
+tests/            603 tests
 logs/, runtime/   audit logs and the mock case store, created at runtime
 .env.example      settings (copied to .env by setup); .env is never shared because it can hold an API key
 ```

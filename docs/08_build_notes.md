@@ -3,6 +3,31 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.17: a request that reaches an officer because a system was down is paid for first (22 October)
+
+Found in the demo: with the document verification service returning bad data every time, the case went straight to
+an officer and the parent never had a chance to pay. Decision D-06 had an exception for this ("nothing could be
+checked"), but it made an outage the one way to reach an officer without paying, and it did not match the card
+(payment is step 3, submission step 4, for every request). **D-06 now has no exception:**
+
+* Identity or document verification down after the retry (with documents attached): nothing is guessed; the reply
+  says an officer will check the documents instead and opens the payment window (the toll-free number is offered as
+  the alternative). After payment the case goes to the officer as "system unavailable", with the receipt.
+* Payment gateway down as well: nothing is submitted or charged, the parent is told plainly and given the toll-free
+  number, and the next message tries again. Scenario 5 in Demo controls has this as its last option ("Verification
+  and payment both down").
+* Case management down after payment (unchanged): the parent is told the fee is paid and the request is not
+  registered yet; the next message registers it without a second payment.
+* The guard blocks every escalation before the fee is paid, whatever the reason, so even a model that tries to refer
+  the outage case at once cannot (tested with the compromised model).
+* The scenario report now also fails a run in which a case reaches an officer unpaid.
+
+Browser checks (local, no AI): bad response every time, then the payment window, then the officer with the receipt
+on the staff screen; verification and payment both down in Arabic: nothing submitted, toll-free number given.
+
+Results (no AI, repeatable): 603 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations
+(449 turns, no crash, no problem).
+
 ## Version 2.16: language switch fixed, the brief's scenarios built into Demo controls, security shown (22 October)
 
 Found by using the portal: **switching the page language part way through a request crashed it** ("KeyError: 'None'").
@@ -32,8 +57,8 @@ Read the case study again word for word and closed what was still only described
   time (nothing is guessed; the case goes to an officer).
 * **Any mocked system can fail in any of those six ways** (section 3: document verification, identity, payment, case
   management). All 24 combinations are tested: once always recovers and submits; verification or identity every time
-  goes to an officer as "system unavailable"; payment or case management every time tells the parent plainly and
-  submits nothing.
+  goes to an officer as "system unavailable" (after the fee is paid, see 2.17); payment or case management every time
+  tells the parent plainly and submits nothing.
 * **The agent trace looks like the brief's console:** each step is marked Interpret (the model, confidence logged),
   Validate (rules engine or a deterministic check, no AI), Act (a mock tool through the guard, "retried once,
   succeeded" shown) or Approve (a person), with a legend.

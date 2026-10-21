@@ -17,14 +17,14 @@ REASON_TEXT = {
     "en": {
         "name_mismatch": "the name on a certificate does not match the passport",
         "verification_inconclusive": "a document could not be conclusively verified",
-        "system_unavailable": "a verification system was unavailable, so nothing was guessed",
+        "system_unavailable": "a Ministry system that checks the documents was unavailable, so nothing was guessed",
         "customer_request": "you asked to speak to a person",
         "other": "the case needs a decision the rules cannot make",
     },
     "ar": {
         "name_mismatch": "لأن الاسم في إحدى الشهادات لا يطابق الاسم في جواز السفر",
         "verification_inconclusive": "لأنه تعذر التحقق من إحدى الوثائق بشكل قاطع",
-        "system_unavailable": "لأن نظام التحقق لم يكن متاحاً، لذلك لم يتم افتراض أي نتيجة",
+        "system_unavailable": "لأن أحد أنظمة الوزارة التي تفحص المستندات لم يكن متاحاً، لذلك لم يتم افتراض أي نتيجة",
         "customer_request": "لأنك طلبت التحدث مع موظف",
         "other": "لأن الطلب يحتاج إلى قرار لا تستطيع قواعد الخدمة اتخاذه",
     },
@@ -96,6 +96,17 @@ T = {
         "ar": ("تم فحص مستنداتك. هناك نقطة تحتاج إلى قرار من موظف في الوزارة {why}. لتقديم طلبك لهذه المراجعة، يرجى "
                "دفع رسوم الخدمة البالغة {fee} درهماً في نافذة الدفع الآمنة. وكما في كل الطلبات، تُدفع الرسوم عند تقديم "
                "الطلب أياً كان قرار الموظف."),
+    },
+    "awaiting_payment_outage": {
+        "en": ("A Ministry system that checks the documents is not responding, even after a second try, so I cannot "
+               "check them here, and nothing has been guessed. A Ministry officer will check them instead. To submit "
+               "your request for that check, please pay the AED {fee} service fee in the secure payment window. Like "
+               "every request, it is paid for when it is submitted, whatever the officer decides. If you prefer, you "
+               "can try again later or call the Ministry on its toll-free number {phone}."),
+        "ar": ("أحد أنظمة الوزارة التي تفحص المستندات لا يستجيب حتى بعد المحاولة مرة ثانية، لذلك لا يمكنني فحصها هنا، "
+               "ولم يتم افتراض أي نتيجة. سيفحصها موظف في الوزارة بدلاً من ذلك. لتقديم طلبك لهذا الفحص، يرجى دفع رسوم الخدمة "
+               "البالغة {fee} درهماً في نافذة الدفع الآمنة. وكما في كل الطلبات، تُدفع الرسوم عند تقديم الطلب أياً كان قرار "
+               "الموظف. ويمكنك إن شئت المحاولة لاحقاً أو الاتصال بالوزارة على الرقم المجاني {phone}."),
     },
     "fee_paid_note": {"en": "The AED {fee} fee is paid.", "ar": "تم دفع الرسوم البالغة {fee} درهماً."},
     "pending_review": {
@@ -264,6 +275,8 @@ def status_message(s: CaseState, lang: Optional[str] = None) -> str:
     if s.status == CaseStatus.SUBMITTED:
         return say("submitted", lang, fee=SERVICE_FEE_AED, ref=s.case_ref)
     if s.status == CaseStatus.AWAITING_PAYMENT:
+        if s.system_outage():                                           # P-03 and D-06: paid first, then the officer
+            return say("awaiting_payment_outage", lang, fee=SERVICE_FEE_AED, phone=MOE_SUPPORT_NUMBER)
         if r is not None and r.outcome == Outcome.HUMAN_REVIEW:        # D-06: paid first, then the officer
             review = {x.rule_id for x in r.by_status(RuleStatus.REVIEW)}
             code = "name_mismatch" if "R-14" in review else "verification_inconclusive"

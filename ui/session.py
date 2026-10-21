@@ -35,21 +35,33 @@ FAILURES = {"none": None} | {f"{sy}:{m}": _plan(sy, m) for sy in SYSTEMS for m i
 # failure, timeout or bad response). Every other situation starts with all systems working.
 SCENARIO_FAILURE = {"SYN-P05": "verification:timeout_once"}
 # The one-click problems offered right under Scenario 5 (any system and problem can still be picked in section 3)
-S5_PICKS = [f"verification:{m}" for m in MODES]
+# Two systems down at once: the documents cannot be checked AND the fee cannot be paid, so nothing is submitted and
+# the parent is given the toll-free number (D-06: no request reaches an officer unpaid)
+BOTH_DOWN = "verification:error_always+payment:error_always"
+FAILURES[BOTH_DOWN] = {"verification": "error_always", "payment": "error_always"}
+S5_PICKS = [f"verification:{m}" for m in MODES] + [BOTH_DOWN]
 # The case study's six mandatory scenarios, by their names in the brief (the other situations are extras)
 MANDATORY = {f"SYN-P0{n}": n for n in range(1, 7)}
 
 
 def fail_parts(key: str) -> tuple[str, str]:
-    """("none", "") or (system, mode)."""
-    return tuple(key.split(":", 1)) if ":" in (key or "") else ("none", "")
+    """("none", "") or (system, mode) of the first problem (section 3 shows one system at a time)."""
+    first = (key or "").split("+", 1)[0]
+    return tuple(first.split(":", 1)) if ":" in first else ("none", "")
 
 
 def fail_label(key: str, lang: str) -> str:
+    if key == BOTH_DOWN:
+        return t("s5_both", lang)
     system, mode = fail_parts(key)
     if system == "none":
         return t("fail_none", lang)
     return f"{t('sys_' + system, lang)}: {t('mode_' + mode, lang)}"
+
+
+def s5_label(key: str, lang: str) -> str:
+    """The short name of a Scenario 5 problem (all on document verification, except the double outage)."""
+    return t("s5_both", lang) if key == BOTH_DOWN else t("mode_" + fail_parts(key)[1], lang)
 
 
 base_settings = get_settings()

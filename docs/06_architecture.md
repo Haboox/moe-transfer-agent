@@ -40,9 +40,9 @@ passes a guard; eligibility comes only from deterministic rules; anything the ru
 | `list_uploaded_documents` | Session | Card: Service Process step 2 | always |
 | `verify_documents` | MOCK Document Verification | Card: Service Conditions; R-02 to R-09, R-15 | own uploads only |
 | `evaluate_rules` | Rules engine | R-01 to R-15 | profile loaded, all uploads verified |
-| `request_payment` | MOCK Payment Gateway | Card: Fees; R-12 | rules ELIGIBLE on latest documents, not yet paid, no payment window already open; opens the window, the parent pays |
+| `request_payment` | MOCK Payment Gateway | Card: Fees; R-12; D-06 | rules ELIGIBLE or HUMAN_REVIEW on the latest documents, or a system that checks the documents is down (an officer will check them); not yet paid, no payment window already open; opens the window, the parent pays |
 | `submit_application` | MOCK Case Management | Card: Service Process steps 2 to 4 | ELIGIBLE and paid (R-12) |
-| `escalate_to_human` | MOCK Case Management | Approve | the stated reason is true in the record (P-09) |
+| `escalate_to_human` | MOCK Case Management | Approve | the stated reason is true in the record (P-09) and the fee is paid (D-06, every reason) |
 | `get_case_status` | MOCK Case Management | Card: Service Process step 4 | always |
 
 There is no tool that approves, rejects, overrides or edits a rule.
@@ -88,7 +88,7 @@ in the language they write in.
 | Contract check (P-02) | Invented parameters (e.g. fee of AED 0) | `guard.py` | `test_extra_parameters_blocked` |
 | Prerequisites (R-12, P-02) | Paying or submitting out of order | `guard.py` | `test_submit_before_payment_blocked` |
 | Grounded escalation (P-09) | Escalating with a false reason | `guard.py` | `test_escalation_without_grounds_is_blocked` |
-| Retry once, then a person (P-03) | Guessing when a system fails | `executor.py` | `test_s03_each_mock_has_a_contract_and_realistic_failures` |
+| Retry once, then a person (P-03), paid for first (D-06) | Guessing when a system fails; a request reaching an officer unpaid. If the payment gateway is down too, nothing is submitted and the parent is given the toll-free number | `executor.py`, `agent.py`, `guard.py` | `test_s03_each_mock_has_a_contract_and_realistic_failures`, `test_an_outage_opens_the_payment_window_then_reaches_an_officer`, `test_an_outage_with_the_payment_gateway_down_submits_nothing_and_gives_the_number` |
 | Outcome from record (P-04) | "Your certificate is ready" | `agent.py`, `output_guard.py` | `test_outcome_promises_are_blocked` |
 | Requirements from the card (P-10) | Paraphrased policy ("MoFA or Embassy") | `agent.py` | `test_requirements_answer_is_the_card_word_for_word` |
 | Untrusted content (P-05) | Instructions hidden in documents or messages | `prompts.py`, guard | S4, S4-ADV |
