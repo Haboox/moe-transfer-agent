@@ -21,7 +21,8 @@ from typing import Iterable, Optional
 from .audit import AuditLog
 from .config import LOG_DIR, MOE_SUPPORT_NUMBER, Settings, get_settings
 from .executor import AgentContext, run_tool
-from .facts import clock_reply, is_clock_question, is_off_topic, off_topic_reply
+from .facts import (asks_doc_number, clock_reply, doc_number_reply, is_clock_question, is_off_topic, is_several_children,
+                    off_topic_reply, several_children_reply)
 from .language import any_grade, asks_for_person, detect_language, stated_grade
 from .llm import OVERRIDE_WORDS, BaseLLM, LLMError
 from .messages import lang_of, low_grade_why, outcome_panel, redirect_message, say, status_message
@@ -174,7 +175,8 @@ class ServiceAgent:
         t = text or ""
         quick = (not added and not OVERRIDE_WORDS.search(t)
                  and bool(GREETING.match(t) or THANKS.match(t) or is_unclear(t) or PERSONAL.search(t)
-                          or is_clock_question(t) or is_off_topic(t) or asks_for_person(t)))
+                          or is_clock_question(t) or is_off_topic(t) or asks_for_person(t)
+                          or is_several_children(t) or asks_doc_number(t)))
         if quick:
             from .llm import heuristic_interpret
             intent = {**heuristic_interpret(user_content), "language": s.lang}
@@ -235,6 +237,14 @@ class ServiceAgent:
                 policy_reply += "\n\n" + status_message(s)
             ctx.audit.log("policy", "clock_answered" if clock else "off_topic_answered",
                           basis="P-17; trusted source: system clock (UAE time)" if clock else "P-17; no internet access")
+        if policy_reply is None and not added and (is_several_children(text) or asks_doc_number(text)):
+            # found live: both got an unrelated card section from the model; now a fixed answer (A-16, P-08)
+            several = is_several_children(text)
+            policy_reply = several_children_reply(lang_of(s)) if several else doc_number_reply(lang_of(s))
+            if s.case_ref:
+                policy_reply += "\n\n" + status_message(s)
+            ctx.audit.log("policy", "several_children_answered" if several else "doc_number_refused",
+                          basis="A-16: one student per request" if several else "P-08: no document numbers in chat")
         if policy_reply is None and asks_for_person(text or "") and not added:
             # P-09 (decided 21 October): asking for a person does not create or refer a case. The parent gets the
             # Ministry's toll-free number, written by code (found live: the model promised "I will connect you"
@@ -250,13 +260,17 @@ class ServiceAgent:
         if policy_reply is None and not quick:
             final_text, llm_failed = self._act_loop(user_content, intent)
 
-        completed = self._finish_document_steps(intent) if policy_reply is None and not llm_failed else False
+        # P-13 also when the model is unavailable (found live: with the hosted model's daily allowance used up, attached
+        # documents were never checked): the document steps are code and do not need the model
+        completed = self._finish_document_steps(intent) if policy_reply is None else False
         policy_acted = self._safety_net(events_before)
         down = self._systems_down(events_before) if not policy_acted else []
+        if not s.uploads:
+            # the identity record could not be read for a QUESTION (nothing attached yet): answer from the card in
+            # general terms; only a parent who attached documents gets the outage message or an officer
+            down = [d for d in down if d != "get_applicant_profile"]
         if policy_reply is not None:
             reply, problems = policy_reply, ["policy_reply"]   # written by code (redirect, person, clock)
-        elif llm_failed:
-            reply, problems = status_message(s) + "\n" + say("llm_down", lang_of(s)), ["llm_unavailable"]
         elif policy_acted:
             reply, problems = status_message(s), ["policy_escalation"]
         elif down and s.status not in OUTCOME_STATES:
@@ -338,8 +352,14 @@ class ServiceAgent:
             # P-04: the status is read from the case record, never described by the model
             reply = status_message(s) if s.case_ref else say("no_application", lang_of(s)) + " " + status_message(s)
             problems = ["outcome_from_record"]
+        elif llm_failed:
+            # the model was unavailable and no code-written answer above applied: the case status, with a note
+            reply, problems = status_message(s) + "\n" + say("llm_down", lang_of(s)), ["llm_unavailable"]
         else:
             reply, problems = check_reply(final_text, s)
+        if llm_failed and "llm_unavailable" not in problems:
+            # every answer above is written by code from the card or the record; the parent is told the AI is resting
+            reply += "\n\n" + say("llm_down_note", lang_of(s))
         if intent["asks_to_override_rules"] and (problems or policy_reply is not None):
             reply = say("override", lang_of(s)) + "\n\n" + reply
         from_record = {"empty_reply", "requirements_from_card", "not_on_card", "outcome_from_record", "policy_completed",
@@ -575,7 +595,7 @@ class ServiceAgent:
         if s.is_closed():
             return False
         code = None
-        if s.failed_verifications or "get_applicant_profile" in self._systems_down(events_before):
+        if s.failed_verifications or ("get_applicant_profile" in self._systems_down(events_before) and s.uploads):
             # the identity or verification system failed after its retry: the documents cannot be checked, so an
             # officer takes over (P-03). A payment or case system outage is different: the parent is told, and the
             # next message retries (an officer cannot take the fee, and a paid parent must not pay twice).

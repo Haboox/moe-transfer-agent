@@ -122,6 +122,10 @@ def _escalation_grounds_missing(ctx: AgentContext, reason: str) -> str:
     elif reason == "system_unavailable":
         if not (s.failed_verifications or "get_applicant_profile" in s.failed_systems):
             return "reason 'system_unavailable' is not supported: no backend call has failed."
+        if not s.uploads:
+            # found live: a fee question during an identity outage created a case for an officer with nothing in it
+            return ("nothing is attached yet, so there is no request for an officer: tell the parent a Ministry "
+                    "system is unavailable and to try again later.")
     elif reason == "other":
         if not (fresh and s.rule_report.outcome == Outcome.HUMAN_REVIEW):
             return "reason 'other' needs a current HUMAN_REVIEW rules outcome."

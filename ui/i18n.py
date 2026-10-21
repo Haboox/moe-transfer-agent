@@ -94,9 +94,15 @@ S = {
     "doc_remove": ("Remove this file", "إزالة هذا الملف"), "doc_remove_short": ("Remove", "إزالة"),
     "dc_open_nat": ("Open test: nationality on the UAE Pass record", "الاختبار المفتوح: الجنسية في سجل الهوية الرقمية"),
     "dc_open_nat_ph": ("Select a nationality", "اختر الجنسية"),
-    "dc_open_nat_none": ("No nationality selected: the record shows none, so a UAE visa is required. Choose one, then "
-                         "press Start new session.", "لم تُختر جنسية: السجل لا يُظهر جنسية، لذلك تلزم الإقامة. اختر جنسية ثم "
-                         "اضغط بدء جلسة جديدة."),
+    "dc_open_nat_none": ("No nationality selected: the record shows none, so a UAE visa is required. Choosing one "
+                         "restarts the open test with it at once and shows that applicant's documents.",
+                         "لم تُختر جنسية: السجل لا يُظهر جنسية، لذلك تلزم الإقامة. اختيار جنسية يعيد بدء الاختبار المفتوح بها "
+                         "فوراً ويعرض مستندات المتقدم المطابق."),
+    "rv_staff_id": ("The officer ID must look like STAFF-XXXX (synthetic staff accounts only).",
+                    "يجب أن يكون رقم الموظف بالشكل STAFF-XXXX (حسابات موظفين اصطناعية فقط)."),
+    "rv_note": ("Write a note explaining the decision first.", "اكتب أولاً ملاحظة توضح سبب القرار."),
+    "rv_decided": ("This case is already decided.", "تم البت في هذا الطلب مسبقاً."),
+    "rv_other": ("The decision could not be recorded: {e}", "تعذر تسجيل القرار: {e}"),
     "open_title": ("Open test (no preset case)", "اختبار مفتوح (بلا حالة جاهزة)"),
     "dc_open_nat_help": ("Decides whether a UAE visa is needed (GCC nationals do not need one).",
                          "تحدد ما إذا كانت الإقامة مطلوبة (لا تلزم لأبناء دول مجلس التعاون)."),

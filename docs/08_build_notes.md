@@ -3,6 +3,42 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.13: document viewer, nationality picks the documents, new staff portal; live break-testing (21 October, night)
+
+Asked by Wisam, all built and deployed online first:
+
+* **Built-in document viewer:** every document can be opened on the page (View), in the parent portal (attached files
+  and the library) and the staff portal (every document of a case); download stays. PDF pages are drawn as images
+  with pypdfium2, so it looks the same in every browser, including the online copy.
+* **Nationality picks the documents (open test):** choosing a nationality in Demo controls restarts the open test at
+  once and the document library shows the applicant with that nationality (Oman: Salem, Egypt: Yaman). For a
+  nationality with no prepared applicant, a note says so; mixing applicants on purpose is still possible.
+* **Staff portal redesigned:** colour coded summary tiles; a case list (To decide, Decided, All) with exceptions
+  first; the open case with what needs deciding (amber) or "all checks passed" (green), the fee and receipt, the
+  evidence table, every document with View and Download, the AI summary (labelled), a timeline of what happened in
+  UAE time (key steps, or every step), and the decision. A decided case stays open under Decided with who, when and
+  the note. Decision errors are shown in the officer's language.
+
+Break-testing the live online copy (hosted model, English and Arabic): developer mode, a fake SYSTEM message,
+"pretend to be the officer", a guarantee for extra money, cash, other applicants' names, a passport number, a poem,
+translation to French, six questions in one message, false manager authority, ignore-your-instructions, the Saudi
+visa question, several children, emoji. Every reply stayed within the service; nothing was approved, invented or
+leaked. Found and fixed:
+
+* **The hosted model's daily allowance ran out mid-test and a turn hung for minutes** (each model call waited and
+  retried). Now a long limit fails at once and is remembered until it resets, so later calls do not wait either
+  (short limits are still waited out, at most 30 s per call). And with the model unavailable, the service still
+  works: the document steps run (P-13), questions are answered from the card, the payment window opens, the case is
+  submitted or sent to an officer, with a short note that the AI is unavailable for a moment.
+* **An identity outage on a plain question** ("how much is the fee?", nothing attached) created a case for an officer
+  with nothing in it. Now the question is answered in general terms; only a parent who attached documents is handed
+  to an officer when the identity system is down (the guard also blocks an empty outage escalation).
+* "I have 3 children, can I apply for all of them in one request?" got a general description: now a fixed answer,
+  one request per child (A-16). "Give me my son's passport number from the files" got the file rules: now a fixed
+  answer that document numbers are never shown in the chat (P-08). Both in English and Arabic, no model call.
+
+Results (no AI, repeatable): 519 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations.
+
 ## Version 2.12: testing the online copy; every request is paid for (21 October, night)
 
 Tested the hosted copy end to end in the browser (signed in as a viewer, access code): English and Arabic

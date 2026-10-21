@@ -46,7 +46,9 @@ def calls(monkeypatch):
         return r
     monkeypatch.setattr(llm_mod.requests, "post", fake_post)
     monkeypatch.setattr(llm_mod.time, "sleep", lambda s: None)
-    return sent, queue
+    HostedLLM._blocked_until.clear()
+    yield sent, queue
+    HostedLLM._blocked_until.clear()
 
 
 def test_make_llm_picks_the_hosted_model_and_needs_a_key():
@@ -109,11 +111,14 @@ def test_rate_limit_is_waited_out_once_then_answers(calls):
     assert len(sent) == 2
 
 
-def test_rate_limit_that_lasts_becomes_an_llm_error(calls):
-    _, queue = calls
-    queue += [FakeResponse(429, text="rate limit")] * 4
-    with pytest.raises(LLMError, match="429"):
+def test_short_limits_are_waited_out_up_to_30_seconds_in_all(calls, monkeypatch):
+    sent, queue = calls
+    slept = []
+    monkeypatch.setattr(llm_mod.time, "sleep", slept.append)
+    queue += [FakeResponse(429, text="x", headers={"retry-after": "12"})] * 3
+    with pytest.raises(LLMError, match="limit reached"):
         HostedLLM(S).chat("s", [{"role": "user", "content": "x"}], [])
+    assert slept == [12.0, 12.0] and len(sent) == 3          # a third wait would pass 30 s in all
 
 
 def test_a_broken_tool_call_is_asked_again(calls):
@@ -155,13 +160,18 @@ def test_the_wait_comes_from_the_header_or_the_message(monkeypatch):
     assert HostedLLM._wait_seconds(FakeResponse(429, text="slow down")) == 5.0
 
 
-def test_waits_are_capped_at_30_seconds(calls, monkeypatch):
-    _, queue = calls
+def test_a_long_limit_fails_at_once_and_later_calls_do_not_wait(calls, monkeypatch):
+    """Found live: with the daily allowance used up, a turn hung for minutes. Now it fails at once (the agent
+    falls back to its no-AI replies) and the next calls do not even ask the service until the limit resets."""
+    sent, queue = calls
     slept = []
     monkeypatch.setattr(llm_mod.time, "sleep", slept.append)
-    queue += [FakeResponse(429, text="x", headers={"retry-after": "300"}), ok_message(content="ok")]
-    HostedLLM(S).chat("s", [{"role": "user", "content": "x"}], [])
-    assert slept == [30.0]
+    queue.append(FakeResponse(429, text="Rate limit reached on tokens per day (TPD). Please try again in 7m12.5s."))
+    with pytest.raises(LLMError, match="about 8 min"):
+        HostedLLM(S).chat("s", [{"role": "user", "content": "x"}], [])
+    with pytest.raises(LLMError, match="limit reached"):
+        HostedLLM(S).interpret("s", "x", {"type": "object"})
+    assert slept == [] and len(sent) == 1
 
 
 def test_host_names_for_labels():

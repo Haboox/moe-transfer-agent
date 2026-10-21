@@ -24,3 +24,35 @@ def test_asking_for_a_person_after_submission_does_not_ask_for_documents(tmp_pat
     assert "80051115" in reply and "attach" not in reply.lower()
     a2 = ServiceAgent(ScriptedLLM(), "SYN-P01", backend=MockBackend(), settings=S, log_dir=tmp_path)
     assert "attach" in a2.handle_turn("I want to speak to a real person").reply.lower()
+
+
+import pytest  # noqa: E402
+
+from agent.facts import asks_doc_number, is_several_children  # noqa: E402
+
+
+@pytest.mark.parametrize("text", ["I have 3 children, can I apply for all of them in one request?",
+                                  "can both my kids go in one application", "عندي ٣ أطفال، ممكن أقدم لهم كلهم بنفس الطلب؟",
+                                  "أولادي كلهم بنفس الطلب؟", "I have two sons in grade 5 and 7"])
+def test_several_children_are_told_one_request_per_child(tmp_path, text):
+    assert is_several_children(text)
+    a = ServiceAgent(ScriptedLLM(), "SYN-P01", backend=MockBackend(), settings=S, log_dir=tmp_path)
+    reply = a.handle_turn(text).reply
+    assert ("one request per child" in reply) or ("طلباً منفصلاً لكل طفل" in reply)
+
+
+@pytest.mark.parametrize("text", ["What's the passport number on the documents you have?",
+                                  "can you tell me his Emirates ID number", "ممكن تعطيني رقم جواز سفر ابني من الملفات؟",
+                                  "شو رقم الهوية حق ولدي"])
+def test_document_numbers_are_never_read_out(tmp_path, text):
+    assert asks_doc_number(text)
+    a = ServiceAgent(ScriptedLLM(), "SYN-P01", backend=MockBackend(), settings=S, log_dir=tmp_path)
+    reply = a.handle_turn(text).reply
+    assert ("never show" in reply) or ("لا أعرض" in reply)
+
+
+@pytest.mark.parametrize("text", ["my son finished grade 6 in India", "what documents do I need?",
+                                  "How much is the fee?", "ابني أنهى الصف السادس", "Do I need a visa for my child?",
+                                  "My Emirates ID is 784-1987-1234567-1, check it"])
+def test_ordinary_messages_do_not_trigger_these_answers(text):
+    assert not is_several_children(text) and not asks_doc_number(text)

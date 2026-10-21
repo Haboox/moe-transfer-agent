@@ -213,8 +213,16 @@ def host_name(url: str) -> str:
 
 class HostedLLM(BaseLLM):
     """Any chat completions API in the OpenAI request format (Groq, Google Gemini, ...). No extra package: plain
-    HTTPS with requests. Only synthetic case data is ever sent. Free tiers limit tokens per minute, so a rate limit
-    (HTTP 429) is waited out as the service asks, up to 30 s at a time, three times."""
+    HTTPS with requests. Only synthetic case data is ever sent.
+
+    Free tiers limit tokens per minute and per day. A short limit (the service asks to wait 20 s or less) is waited
+    out, at most 30 s in all per call. A long one (for example the daily allowance, "try again in 7m") fails at once,
+    and the client remembers it: until that time every call fails at once too, so the agent falls back to its
+    no-AI replies instead of keeping the parent waiting (found live: a turn hung for minutes)."""
+
+    MAX_WAIT_S = 20.0           # longest single wait worth taking
+    MAX_TOTAL_WAIT_S = 30.0     # longest total wait in one call
+    _blocked_until: dict[str, float] = {}     # per service and model, shared by every session of this server
 
     def __init__(self, settings: Settings):
         if not settings.hosted_api_key:
@@ -235,7 +243,11 @@ class HostedLLM(BaseLLM):
         url = f"{self.s.hosted_url.rstrip('/')}/chat/completions"
         headers = {"Authorization": f"Bearer {self.s.hosted_api_key}", "Content-Type": "application/json"}
         who = host_name(self.s.hosted_url)
-        r, waits, retries = None, 0, 0
+        slot = f"{self.s.hosted_url}|{self.model}"
+        left = HostedLLM._blocked_until.get(slot, 0) - time.time()
+        if left > 0:
+            raise LLMError(f"{who} usage limit reached; available again in about {int(left // 60) + 1} min")
+        r, waited, retries = None, 0.0, 0
         while True:
             try:
                 r = requests.post(url, json=payload, headers=headers, timeout=self.s.llm_timeout_seconds)
@@ -243,9 +255,13 @@ class HostedLLM(BaseLLM):
                 raise LLMError(f"{who} could not be reached ({e.__class__.__name__})") from e
             except requests.exceptions.Timeout as e:
                 raise LLMError(f"{who} did not answer within {self.s.llm_timeout_seconds} s") from e
-            if r.status_code == 429 and waits < 3:                      # free tier limit: wait as asked
-                waits += 1
-                time.sleep(min(max(self._wait_seconds(r), 1.0), 30.0))
+            if r.status_code == 429:                                    # free tier limit
+                wait = max(self._wait_seconds(r), 1.0)
+                if wait > self.MAX_WAIT_S or waited + wait > self.MAX_TOTAL_WAIT_S:
+                    HostedLLM._blocked_until[slot] = time.time() + wait
+                    raise LLMError(f"{who} usage limit reached; available again in about {int(wait // 60) + 1} min")
+                waited += wait
+                time.sleep(wait)
                 continue
             if r.status_code == 400 and "tool_use_failed" in r.text and retries < 2:
                 retries += 1

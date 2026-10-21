@@ -125,6 +125,9 @@ T = {
     },
     "checking": {"en": "I am checking your documents against the service requirements.",
                  "ar": "أقوم الآن بفحص وثائقك مقابل متطلبات الخدمة."},
+    "llm_down_note": {"en": "(The AI assistant is unavailable for a moment; this answer comes from the published service "
+                            "information and your case record.)",
+                      "ar": "(المساعد الذكي غير متاح مؤقتاً؛ هذه الإجابة من معلومات الخدمة المنشورة وسجل طلبك.)"},
     "llm_down": {"en": "(The assistant is temporarily unavailable, so this is an automatic update on your request.)",
                  "ar": "(المساعد غير متاح مؤقتاً، لذلك هذه رسالة تلقائية عن حالة طلبك.)"},
     "override": {

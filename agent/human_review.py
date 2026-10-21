@@ -24,22 +24,26 @@ STAFF_ID = re.compile(r"^STAFF-[A-Z0-9]{2,10}$")
 
 
 class ReviewError(Exception):
-    pass
+    """A decision that cannot be recorded. `code` lets the screen say it in the officer's language."""
+
+    def __init__(self, message: str, code: str = "other"):
+        super().__init__(message)
+        self.code = code
 
 
 def decide(store: CaseStore, case_ref: str, reviewer_id: str, decision: str, note: str,
            log_dir: Path = LOG_DIR) -> CaseRecord:
     if not STAFF_ID.match(reviewer_id or ""):
-        raise ReviewError("reviewer ID must look like STAFF-XXXX (synthetic staff accounts only)")
+        raise ReviewError("reviewer ID must look like STAFF-XXXX (synthetic staff accounts only)", "staff_id")
     if decision not in ("approve", "reject"):
         raise ReviewError("decision must be 'approve' or 'reject'")
     if not (note or "").strip():
-        raise ReviewError("a note explaining the decision is required")
+        raise ReviewError("a note explaining the decision is required", "note")
     rec = store.get(case_ref)
     if rec is None:
         raise ReviewError(f"case {case_ref} not found")
     if rec.status not in (CaseStatus.PENDING_HUMAN_REVIEW, CaseStatus.SUBMITTED):
-        raise ReviewError(f"case {case_ref} is {rec.status.value}: already decided, nothing to decide")
+        raise ReviewError(f"case {case_ref} is {rec.status.value}: already decided, nothing to decide", "decided")
     basis = ("P-01 human decision on an escalated case" if rec.status == CaseStatus.PENDING_HUMAN_REVIEW
              else "P-16 official equivalency decision by an officer (all automated checks passed)")
     new_status = CaseStatus.HUMAN_APPROVED if decision == "approve" else CaseStatus.HUMAN_REJECTED

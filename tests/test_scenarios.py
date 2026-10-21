@@ -65,8 +65,10 @@ def test_llm_outage_falls_back_safely(make_agent):
 
     a = make_agent("SYN-P01", llm=DownLLM())
     r = a.handle_turn("hello", ["P01-PASSPORT"])
-    assert "temporarily unavailable" in r.reply
-    assert a.state.case_ref is None
+    # found live (hosted model out of allowance): the document steps are code and still run without the model, and
+    # the answer is written from the record; the parent is told the AI is unavailable. Nothing is submitted.
+    assert "unavailable for a moment" in r.reply and "Emirates ID" in r.reply
+    assert a.state.case_ref is None and a.state.status.value == "AWAITING_CUSTOMER"
 
 
 def test_model_that_loops_is_stopped(make_agent, settings):

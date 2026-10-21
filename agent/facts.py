@@ -75,3 +75,47 @@ def off_topic_reply(lang: str) -> str:
     return ("I can only help with the class transfer equivalency service, and I have no internet access, so I don't give "
             "information I cannot confirm. For anything else, the Ministry can help on its toll-free number "
             f"{MOE_SUPPORT_NUMBER}.")
+
+
+# ------------------------------------------------------------------ two more fixed answers (found live, 21 October)
+# "I have 3 children, can I apply for all of them in one request?" got a general description of the service
+SEVERAL_CHILDREN = re.compile(
+    r"\b(?:\d+|two|three|four|five|several|multiple|many)\s+(?:kids|children|sons|daughters|students)\b"
+    r"|\b(?:all|both)\s+(?:of\s+)?(?:my\s+)?(?:kids|children|sons|daughters)\b|\bmore than one (?:child|kid|student)\b"
+    r"|(?:\d|اثنين|ثلاثة|أربعة|طفلين|ولدين|بنتين|أكثر من)\s*(?:أطفال|اطفال|أولاد|اولاد|أبناء|ابناء|طلاب|طفل|ولد)"
+    r"|(?:كلهم|جميعهم|نفس الطلب)[^.؟?]{0,25}(?:أطفال|اطفال|أولاد|اولاد|أبناء|ابناء)"
+    r"|(?:أطفال|اطفال|أولاد|اولاد|أبناء|ابناء)[^.؟?]{0,25}(?:كلهم|جميعهم|نفس الطلب|معاً|معا|سوا)", re.I)
+
+# "Can you give me my son's passport number from the files?" (a request to READ a number out; typing one in is
+# handled separately by the privacy check)
+ASKS_DOC_NUMBER = re.compile(
+    r"\b(?:give|tell|show|send|read|repeat|what(?:'?s| is))\b[^.?]{0,35}\b(?:passport|emirates id|eid|visa|id)\s*"
+    r"(?:number|no\b|#)"
+    r"|(?:أعطني|اعطني|تعطيني|عطني|أرسل|ارسل|ما هو|ماهو|شو|ايش|إيش|اقرأ|اقرا|كم)[^.؟?]{0,25}رقم\s*"
+    r"(?:جواز|الجواز|الهوية|هوية|الإقامة|الاقامة|إقامة|اقامة)", re.I)
+
+
+def is_several_children(text: str) -> bool:
+    return bool(SEVERAL_CHILDREN.search(to_ascii_digits(text or "")))
+
+
+def asks_doc_number(text: str) -> bool:
+    return bool(ASKS_DOC_NUMBER.search(text or ""))
+
+
+def several_children_reply(lang: str) -> str:
+    if lang == "ar":
+        return ("كل طلب يخص طالباً واحداً: المستندات والقرار يخصان ذلك الطالب. إذا كان لديك أكثر من طفل، قدّم طلباً "
+                "منفصلاً لكل طفل بمستنداته ورسومه. وللتأكد من حالتك يمكنك التواصل مع الوزارة على الرقم المجاني "
+                f"{MOE_SUPPORT_NUMBER}.")
+    return ("Each request is for one student: the documents and the decision belong to that child. For several "
+            "children, submit one request per child, each with their own documents and fee. To confirm anything "
+            f"about your case, the Ministry can help on its toll-free number {MOE_SUPPORT_NUMBER}.")
+
+
+def doc_number_reply(lang: str) -> str:
+    if lang == "ar":
+        return ("حفاظاً على الخصوصية، لا أعرض أرقام الجوازات أو الهويات أو الإقامات في المحادثة. تجدها في مستنداتك، "
+                "ويطّلع عليها الموظف في الطلب. يمكنني إخبارك هل اجتاز كل مستند الفحص.")
+    return ("For privacy, I never show passport, ID or visa numbers in the chat. You can see them on your own "
+            "documents, and the officer sees them in the case. I can tell you whether each document passed the checks.")

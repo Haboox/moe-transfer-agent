@@ -244,9 +244,12 @@ def _decision_form(store: CaseStore, rec, lang: str) -> None:
         try:
             decide(store, rec.case_ref, officer, "approve" if approve else "reject", note)
             st.session_state.flash = t("decided_toast", lang, ref=rec.case_ref)
+            # keep the decided case open, under "Decided", so the officer sees what was recorded
+            st.session_state.staff_filter_next, st.session_state.staff_sel = "decided", rec.case_ref
             st.rerun()
         except ReviewError as e:
-            st.error(str(e))
+            key = {"staff_id": "rv_staff_id", "note": "rv_note", "decided": "rv_decided"}.get(e.code)
+            st.error(t(key, lang) if key else t("rv_other", lang, e=str(e)))
 
 
 def _case_detail(store: CaseStore, rec, lang: str) -> None:
@@ -286,7 +289,10 @@ def _case_detail(store: CaseStore, rec, lang: str) -> None:
 def _case_list(cases, lang: str) -> str | None:
     """The cases on the left: what needs a decision first, then the decided ones. Returns the selected case."""
     ss = st.session_state
-    show = st.segmented_control(t("list_show", lang), ["todo", "decided", "all"], default="todo",
+    if "staff_filter_next" in ss:                    # set by a decision, before the control is drawn
+        ss.staff_filter = ss.pop("staff_filter_next")
+    ss.setdefault("staff_filter", "todo")
+    show = st.segmented_control(t("list_show", lang), ["todo", "decided", "all"],
                                 format_func=lambda k: t("list_" + k, lang), key="staff_filter",
                                 label_visibility="collapsed", width="stretch") or "todo"
     pick = [c for c in cases if show == "all" or (c.status in TO_DECIDE) == (show == "todo")]
