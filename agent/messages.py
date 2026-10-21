@@ -89,6 +89,15 @@ T = {
         "ar": ("تم استيفاء جميع متطلبات الخدمة. يرجى دفع رسوم الخدمة البالغة {fee} درهماً في نافذة الدفع الآمنة "
                "لتقديم طلبك."),
     },
+    "awaiting_payment_review": {
+        "en": ("Your documents are checked. One point needs a decision by a Ministry officer: {why}. To submit your "
+               "request for that review, please pay the AED {fee} service fee in the secure payment window. Like "
+               "every request, it is paid for when it is submitted, whatever the officer decides."),
+        "ar": ("تم فحص مستنداتك. هناك نقطة تحتاج إلى قرار من موظف في الوزارة {why}. لتقديم طلبك لهذه المراجعة، يرجى "
+               "دفع رسوم الخدمة البالغة {fee} درهماً في نافذة الدفع الآمنة. وكما في كل الطلبات، تُدفع الرسوم عند تقديم "
+               "الطلب أياً كان قرار الموظف."),
+    },
+    "fee_paid_note": {"en": "The AED {fee} fee is paid.", "ar": "تم دفع الرسوم البالغة {fee} درهماً."},
     "pending_review": {
         "en": ("Your case {ref} needs a decision by a Ministry staff member because {why}. I have passed it to a "
                "person for review. The review is completed within the service time of up to 30 working days, and you "
@@ -160,6 +169,10 @@ T = {
                              "documents as soon as you attach them.",
                        "ar": "للتحدث مع موظف في الوزارة، يرجى الاتصال بالرقم المجاني للوزارة {phone}. ويمكنني أيضاً "
                              "متابعة طلبك هنا: أجيب عن أسئلتك حول هذه الخدمة وأفحص مستنداتك فور إرفاقها."},
+    "person_contact_closed": {"en": "To speak with a Ministry employee, please call the Ministry's toll-free number {phone}. "
+                                    "I can also answer your questions about this service here.",
+                              "ar": "للتحدث مع موظف في الوزارة، يرجى الاتصال بالرقم المجاني للوزارة {phone}. ويمكنني أيضاً "
+                                    "الإجابة هنا عن أسئلتك حول هذه الخدمة."},
     "closed_no_change": {"en": "The new file was not added: your request has already been sent, and it is decided on "
                                "the documents that were checked. If something needs to change, the Ministry can help "
                                "on its toll-free number {phone}.",
@@ -241,11 +254,17 @@ def status_message(s: CaseState, lang: Optional[str] = None) -> str:
     if s.status == CaseStatus.SUBMITTED:
         return say("submitted", lang, fee=SERVICE_FEE_AED, ref=s.case_ref)
     if s.status == CaseStatus.AWAITING_PAYMENT:
+        if r is not None and r.outcome == Outcome.HUMAN_REVIEW:        # D-06: paid first, then the officer
+            review = {x.rule_id for x in r.by_status(RuleStatus.REVIEW)}
+            code = "name_mismatch" if "R-14" in review else "verification_inconclusive"
+            return say("awaiting_payment_review", lang, fee=SERVICE_FEE_AED,
+                       why=REASON_TEXT["ar" if ar else "en"].get(code, REASON_TEXT["ar" if ar else "en"]["other"]))
         return say("awaiting_payment", lang, fee=SERVICE_FEE_AED)
     if s.status == CaseStatus.PENDING_HUMAN_REVIEW:
         reasons = REASON_TEXT["ar" if ar else "en"]
-        return say("pending_review", lang, ref=s.case_ref,
-                   why=reasons.get(s.escalation_reason or "other", reasons["other"]))
+        msg = say("pending_review", lang, ref=s.case_ref,
+                  why=reasons.get(s.escalation_reason or "other", reasons["other"]))
+        return msg + (" " + say("fee_paid_note", lang, fee=SERVICE_FEE_AED) if s.receipt else "")
     if s.status in (CaseStatus.HUMAN_APPROVED, CaseStatus.HUMAN_REJECTED):
         ok = s.status == CaseStatus.HUMAN_APPROVED
         word = ("بالموافقة على" if ok else "بعدم الموافقة على") if ar else ("approved" if ok else "not approved")

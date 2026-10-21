@@ -7,7 +7,6 @@ document in the prototype. Built in English or Arabic (the page language).
 from __future__ import annotations
 
 import io
-from datetime import datetime
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -15,6 +14,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from .facts import now_uae
 from .config import MOE_SUPPORT_NUMBER, ROOT, SERVICE_FEE_AED, SERVICE_NAME
 from .models import CaseState, CaseStatus
 
@@ -84,7 +84,7 @@ def build_receipt(s: CaseState, lang: str, student_name: str) -> bytes:
     put(y, "Application receipt" if not ar else "إيصال تقديم الطلب", "RcSans-Bold", 16); y -= 18
     put(y, SERVICE_NAME if not ar else "طلب معادلة شهادة دراسية صفوف النقل من خارج الدولة", "RcSans", 9); y -= 30
 
-    when = datetime.now()
+    when = now_uae()                                  # UAE time, also when the server runs on UTC
     rows = [
         (("Reference", "الرقم المرجعي"), s.case_ref),
         (("Date", "التاريخ"), when.strftime("%Y-%m-%d %H:%M")),

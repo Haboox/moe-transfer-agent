@@ -239,7 +239,8 @@ class ServiceAgent:
             # P-09 (decided 21 October): asking for a person does not create or refer a case. The parent gets the
             # Ministry's toll-free number, written by code (found live: the model promised "I will connect you"
             # and did nothing). Cases reach an officer only when the rules or a system failure require it.
-            policy_reply = say("person_contact", lang_of(s), phone=MOE_SUPPORT_NUMBER)
+            policy_reply = say("person_contact_closed" if s.is_closed() else "person_contact", lang_of(s),
+                               phone=MOE_SUPPORT_NUMBER)       # a sent request needs no more documents
             if s.case_ref:
                 policy_reply += "\n\n" + status_message(s)
             ctx.audit.log("policy", "person_contact_given", basis="P-09; Card: Support (toll-free number)")
@@ -368,8 +369,8 @@ class ServiceAgent:
         s, ctx = self.state, self.ctx
         if s.payment_request is None or s.status != CaseStatus.AWAITING_PAYMENT:
             return False, "no_payment_open"
-        if s.rules_stale or not (s.rule_report and s.rule_report.outcome == Outcome.ELIGIBLE):
-            return False, "rules_not_current"             # R-12: pay only on a current ELIGIBLE outcome
+        if s.rules_stale or not (s.rule_report and s.rule_report.outcome in (Outcome.ELIGIBLE, Outcome.HUMAN_REVIEW)):
+            return False, "rules_not_current"             # R-12: pay only on a current ELIGIBLE (or D-06 review) outcome
         try:
             raw = self.backend.payment_pay(s.payment_request.payment_id, method, card,
                                            today=self.settings.application_date)
@@ -397,8 +398,10 @@ class ServiceAgent:
             return False
         if s.unverified_ids() or s.rules_stale:
             return True
-        eligible = s.rule_report is not None and s.rule_report.outcome == Outcome.ELIGIBLE
-        return eligible and (s.receipt is None and s.payment_request is None or s.receipt is not None and not s.case_ref)
+        payable = s.rule_report is not None and s.rule_report.outcome in (Outcome.ELIGIBLE, Outcome.HUMAN_REVIEW)
+        return payable and s.receipt is None and s.payment_request is None or \
+            (s.rule_report is not None and s.rule_report.outcome == Outcome.ELIGIBLE
+             and s.receipt is not None and not s.case_ref)
 
     def _finish_document_steps(self, intent: dict) -> bool:
         """P-13: if the model stopped before the parent's documents were processed, the policy layer runs the
@@ -577,7 +580,8 @@ class ServiceAgent:
             # officer takes over (P-03). A payment or case system outage is different: the parent is told, and the
             # next message retries (an officer cannot take the fee, and a paid parent must not pay twice).
             code, basis = "system_unavailable", "P-03"
-        elif s.rule_report and not s.rules_stale and s.rule_report.outcome == Outcome.HUMAN_REVIEW:
+        elif s.rule_report and not s.rules_stale and s.rule_report.outcome == Outcome.HUMAN_REVIEW and s.receipt:
+            # D-06: paid first, then the officer reviews (an unpaid case gets the payment window from P-13)
             review = {r.rule_id for r in s.rule_report.by_status(RuleStatus.REVIEW)}
             code, basis = ("name_mismatch" if "R-14" in review else "verification_inconclusive"), "P-07"
         if code is None:

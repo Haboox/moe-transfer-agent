@@ -100,6 +100,17 @@ def test_the_officer_sees_which_name_does_not_match_and_on_which_document():
     at.session_state["persona"] = at.session_state["dc_persona"] = "SYN-P03"
     next(b for b in at.button if b.label == "Start new session").click().run()
     _attach_all(at, "Attach selected")
+    agent = at.session_state["agent"]
+    # D-06: the request that needs an officer is paid for first
+    assert agent.state.status.value == "AWAITING_PAYMENT"
+    assert "officer" in at.session_state["chat"][-1]["text"] and "AED 50" in at.session_state["chat"][-1]["text"]
+    ok, _ = agent.complete_payment("card", {"name": "Synthetic Parent", "number": "4242424242424242",
+                                            "expiry": "12/29", "cvv": "123"})
+    assert ok
+    at.chat_input[0].set_value("Paid").run()
+    at.run()
+    assert agent.state.status.value == "PENDING_HUMAN_REVIEW" and agent.state.receipt is not None
+    assert "fee is paid" in at.session_state["chat"][-1]["text"]
     at.session_state["view_pick"] = "staff"
     at.run()
     html = " ".join(m.value for m in at.markdown)

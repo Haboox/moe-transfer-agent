@@ -65,7 +65,7 @@ Running setup again is always safe: it keeps what is already done.
 | 1. Python | Finds Python 3.12 or newer and creates the project's own environment in `.venv` (nothing is installed system wide) | If no suitable Python is found: "Download uv and Python 3.13 now?" Answer **y**, and a private copy of Python is downloaded for this project only (no admin rights needed) |
 | 2. Packages | Installs the exact tested versions in `requirements.txt` into `.venv` | |
 | 3. Settings | Copies `.env.example` to `.env` (an existing `.env` is kept) | |
-| 4. Tests | Runs the 493 automated tests (no AI needed, about 2 minutes) | |
+| 4. Tests | Runs the 496 automated tests (no AI needed, about 2 minutes) | |
 | 5. AI model | Starts Ollama if it is installed and offers to download the model `qwen3:8b` (about 5 GB) | "Download qwen3:8b now?" If Ollama is missing it offers to open the download page, and to use the portal without AI for now |
 
 ### The AI model
@@ -143,7 +143,9 @@ Service Outcome = Business Rules ( Verified Inputs )
 | **Approve**: a person decides what the rules cannot, and issues every equivalency decision | Staff portal | `agent/human_review.py`, `ui/staff.py` | `tests/test_privacy_and_outputs.py`, `tests/test_app_ui.py` |
 
 The model has no approve tool and cannot take payment. A case is submitted only when the rules return ELIGIBLE on
-the latest verified documents and the parent has paid in the payment window. Submitting is the agent's last action:
+the latest verified documents and the parent has paid in the payment window. A request the rules send to an officer
+is paid for in the same way before it reaches the officer, whatever the officer later decides (decision D-06); only
+a case sent to an officer because a Ministry system was down goes unpaid. Submitting is the agent's last action:
 an officer issues the equivalency decision on every case (exceptions and ready cases), so the agent never assumes
 the authority to approve (decision D-02). The parent is told the published service time of 30 working days.
 Outcomes, status and requirements shown to the parent come from the case record and the service card, never from
@@ -154,7 +156,7 @@ computer's clock (policy P-17).
 
 | Command (macOS / Linux) | Windows | What it runs | AI needed |
 |---|---|---|---|
-| `bash run_tests.sh` | `run_tests.bat` | All 493 automated tests, about 2 minutes | No |
+| `bash run_tests.sh` | `run_tests.bat` | All 496 automated tests, about 2 minutes | No |
 | `bash run_live_checks.sh` | `run_live_checks.bat` | The 8 main scenarios (S1, S3, S4, S6 in English and Arabic) with the real model | Yes |
 | `bash run_live_checks.sh all` | `run_live_checks.bat all` | All 42 scenarios, 78 chat probes and 56 stress conversations with the real model (a few hours on a small GPU) | Yes |
 
@@ -189,7 +191,7 @@ ADV variants replace the model with a simulated compromised model that obeys the
 rules and reply checks must hold anyway. Every scenario also checks that no sensitive data reaches replies or logs,
 and that every reply is in the parent's language.
 
-### What the 493 tests prove
+### What the 496 tests prove
 
 | File | What it proves |
 |---|---|
@@ -238,7 +240,7 @@ data/synthetic/   personas.json, documents.json and the synthetic PDFs, English 
 docs/             the documents listed above
 scripts/          start_ai.py, run_scenarios.py, probe_chat.py, stress_test.py, fuzz_chat.py, check_llm.py,
                   generate_synthetic_data.py
-tests/            493 tests
+tests/            496 tests
 logs/, runtime/   audit logs and the mock case store, created at runtime
 .env.example      settings (copied to .env by setup); .env is never shared because it can hold an API key
 ```

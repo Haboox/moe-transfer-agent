@@ -3,6 +3,30 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.12: testing the online copy; every request is paid for (21 October, night)
+
+Tested the hosted copy end to end in the browser (signed in as a viewer, access code): English and Arabic
+applications from question to payment and submission, a declined then accepted card, approval and authority claims,
+the person request, time and weather, prompt injection in the chat and in a document (Arabic), the Grade 1 case
+(Arabic, with the follow-up), emoji, an ID number typed in, a `<script>` tag, a database command, mixed languages,
+a payment gateway outage, the "No AI" fallback, the staff portal (evidence, decision), the audit trail and dark mode.
+Hosted model replies took 2 to 5 seconds (up to about 30 when the free tier's per minute limit was reached).
+
+Found and fixed:
+
+* **Decision D-06, every request is paid for (Wisam's call):** an officer approved an escalated case and the AED 50
+  was never collected; assumption A-09 said the fee was "handled after review", but nothing did it. Now a request
+  the rules send to an officer is submitted like any other: payment window, AED 50, then the officer, whatever the
+  officer decides. Only a case sent to an officer because the identity or verification system was down goes unpaid
+  (nothing could be checked). The guard blocks a rules escalation before payment; the parent is told why the officer
+  is needed before paying. Tests updated and added.
+* **Times in UTC online:** the staff portal and the audit trail showed the server's clock (15:12 instead of 19:12);
+  they now always show UAE time, as does the receipt.
+* After a request was sent, asking for a person still said "I will check your documents as soon as you attach them";
+  a closed case now gets a reply without that line.
+
+Results (no AI, repeatable): 496 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations.
+
 ## Version 2.11: the online copy (plan B) with a hosted model (21 October, evening)
 
 Goal: a private website with the same portal, in case the demo computer fails (`docs/09_online_copy.md`).

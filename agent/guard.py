@@ -89,9 +89,9 @@ def check(ctx: AgentContext, name: str, raw_args: Any) -> GuardDecision:
             return _block("P-02", "fee already paid")
         if s.payment_request is not None:
             return _block("P-02", "the payment window is already open; ask the customer to complete the payment there")
-        if not _rules_fresh_and(ctx, Outcome.ELIGIBLE):
-            return _block("R-12", "payment is only requested after the rules return ELIGIBLE "
-                                  "on the latest documents")
+        if not (_rules_fresh_and(ctx, Outcome.ELIGIBLE) or _rules_fresh_and(ctx, Outcome.HUMAN_REVIEW)):
+            return _block("R-12", "payment is only requested after the rules return ELIGIBLE (or HUMAN_REVIEW, "
+                                  "D-06: paid before the officer reviews) on the latest documents")
     elif name == "submit_application":
         if not _rules_fresh_and(ctx, Outcome.ELIGIBLE):
             return _block("P-01", "submission requires a current ELIGIBLE rules outcome")
@@ -125,4 +125,8 @@ def _escalation_grounds_missing(ctx: AgentContext, reason: str) -> str:
     elif reason == "other":
         if not (fresh and s.rule_report.outcome == Outcome.HUMAN_REVIEW):
             return "reason 'other' needs a current HUMAN_REVIEW rules outcome."
+    if reason != "system_unavailable" and s.receipt is None:
+        # D-06 (decided 21 October): a request the rules send to an officer is submitted like any other, so the
+        # AED 50 fee is paid first. Only a system failure reaches an officer unpaid (nothing could be checked).
+        return "the AED 50 fee must be paid before the request goes to an officer (D-06): call request_payment first."
     return ""

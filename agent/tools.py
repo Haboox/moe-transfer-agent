@@ -258,6 +258,7 @@ def _escalate(ctx: AgentContext, args: EscalateArgs) -> dict:
             status=CaseStatus.PENDING_HUMAN_REVIEW,
             rule_outcome=s.rule_report.outcome.value if s.rule_report else None,
             escalation_reason=args.reason_code, escalation_summary=summary, language=s.lang,
+            receipt_id=s.receipt.receipt_id if s.receipt else None,
             rule_summary=_rule_summary(s), **_case_facts(s)),
         CaseRecord, basis=f"escalation: {args.reason_code}")
     s.case_ref, s.status, s.escalation_reason = rec.case_ref, CaseStatus.PENDING_HUMAN_REVIEW, args.reason_code
@@ -300,15 +301,16 @@ _TOOL_LIST = [
              "ELIGIBLE, NEEDS_INFO, HUMAN_REVIEW or WRONG_SERVICE. Only this decides eligibility.",
              EMPTY, NoArgs, _evaluate),
     ToolSpec("request_payment",
-             f"Requests the service fee (AED {SERVICE_FEE_AED}). Only allowed when rules are ELIGIBLE. "
+             f"Requests the service fee (AED {SERVICE_FEE_AED}). Only allowed when rules are ELIGIBLE, or HUMAN_REVIEW "
+             "(the request is paid for before an officer reviews it). "
              "In the app it opens a payment window where the customer pays.",
              EMPTY, NoArgs, _pay),
     ToolSpec("submit_application",
              "Creates the case in the case management system. Only allowed when rules are ELIGIBLE "
              "and the fee is paid.", EMPTY, NoArgs, _submit),
     ToolSpec("escalate_to_human",
-             "Sends the case to a staff member when the rules return HUMAN_REVIEW, a system is "
-             "unavailable, or the customer asks for a person.",
+             "Sends the case to a staff member when the rules return HUMAN_REVIEW (after the fee is paid) "
+             "or a system is unavailable. Never for a customer who asks for a person (give the phone number).",
              {"type": "object",
               "properties": {"reason_code": {"type": "string",
                                              "enum": ["name_mismatch", "verification_inconclusive",

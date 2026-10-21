@@ -19,6 +19,7 @@ import streamlit as st
 
 from agent.config import LOG_DIR, ROOT
 from agent.countries import shown
+from agent.facts import UAE
 from agent.human_review import ReviewError, decide
 from agent.mocks import CaseStore
 from agent.models import CaseStatus
@@ -41,9 +42,9 @@ def _student(student_ref: str, lang: str) -> str:
 
 
 def _local(ts: str, fmt: str = "%H:%M:%S") -> str:
-    """Log times are UTC; the screen shows this computer's local time (Dubai on the demo laptop)."""
+    """Log times are UTC; the screen shows UAE time, wherever the portal runs (the online copy's server is on UTC)."""
     try:
-        return datetime.fromisoformat(ts).astimezone().strftime(fmt)
+        return datetime.fromisoformat(ts).astimezone(UAE).strftime(fmt)
     except (TypeError, ValueError):
         return ts or ""
 

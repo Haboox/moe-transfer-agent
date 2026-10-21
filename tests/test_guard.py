@@ -135,4 +135,19 @@ def test_escalation_allowed_when_rule_says_review(make_ctx):
     _upload_all(ctx)
     run_tool(ctx, "verify_documents", {})
     assert run_tool(ctx, "evaluate_rules", {})["outcome"] == "HUMAN_REVIEW"
+    # D-06: a request that needs an officer is paid for first, like any submitted request
+    blocked = run_tool(ctx, "escalate_to_human", {"reason_code": "name_mismatch"})
+    assert blocked["status"] == "blocked" and "fee must be paid" in blocked["reason"]
+    assert run_tool(ctx, "request_payment", {})["status"] == "ok"
     assert run_tool(ctx, "escalate_to_human", {"reason_code": "name_mismatch"})["status"] == "ok"
+    rec = ctx.backend.cases.get(ctx.state.case_ref)
+    assert rec.receipt_id == ctx.state.receipt.receipt_id and rec.status.value == "PENDING_HUMAN_REVIEW"
+
+
+def test_a_system_failure_reaches_an_officer_without_payment(make_ctx):
+    ctx = make_ctx(persona="SYN-P05")
+    run_tool(ctx, "get_applicant_profile", {})
+    _upload_all(ctx)
+    ctx.state.failed_verifications = {ctx.state.uploads[0].doc_id: "timeout"}
+    assert ctx.state.receipt is None
+    assert run_tool(ctx, "escalate_to_human", {"reason_code": "system_unavailable"})["status"] == "ok"
