@@ -1,0 +1,26 @@
+# Streamlit settings for the prototype. The theme below is the starting (light, MoE website) look;
+# the app switches light/dark and the font for Arabic at runtime (ui/theme.py).
+[server]
+# No address here: run_app.sh / run_app.bat add --server.address localhost (this computer only); the online copy
+# (Streamlit Community Cloud) must listen on its own network.
+headless = false                    # opens the portal in the browser
+showEmailPrompt = false             # no "Email:" question in the terminal on a new computer
+maxUploadSize = 10
+enableStaticServing = true          # serves static/fonts so the page works offline
+
+[client]
+toolbarMode = "minimal"
+showSidebarNavigation = false
+
+[logger]
+hideWelcomeMessage = true          # no "Help agents write better apps" popup in the demo
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#92722A"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F7F5F0"
+textColor = "#1B1D21"

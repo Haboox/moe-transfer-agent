@@ -1,0 +1,7 @@
+# Keep line endings right on every computer: Windows scripts need CRLF, shell scripts need LF
+*.bat text eol=crlf
+*.sh text eol=lf
+*.pdf binary
+*.png binary
+*.ttf binary
+*.woff2 binary

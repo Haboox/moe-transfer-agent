@@ -1,0 +1,12 @@
+# Exact versions that were tested together (Python 3.12, 3.13 and 3.14; macOS, Windows and Linux).
+# setup.sh / setup.bat install these into the project's own environment (.venv):  pip install -r requirements.txt
+pydantic==2.13.5           # data contracts for tools and case state
+requests==2.34.2           # talks to the local AI server (Ollama)
+python-dotenv==1.2.3       # reads settings from .env
+streamlit==1.65.0          # the web app (parent and staff portals)
+pandas==3.0.5              # tables in the web app
+anthropic==1.13.0          # only used if LLM_PROVIDER=anthropic
+pytest==9.1.1              # automated tests
+reportlab==5.0.1           # receipts (PDF) and regenerating the synthetic PDFs
+arabic-reshaper==3.0.1     # Arabic letters joined in PDFs
+python-bidi==0.6.11        # Arabic right to left in PDFs

@@ -1,0 +1,257 @@
+[
+  {
+    "persona_id": "SYN-P01",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 1: complete and correct application",
+    "story_ar": "السيناريو 1: طلب مكتمل وصحيح",
+    "uae_pass_ref": "MOCK-UAEPASS-P01",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P01",
+      "given_name": "Arin",
+      "family_name": "Velanthar",
+      "nationality": "India",
+      "given_name_ar": "آرين",
+      "family_name_ar": "فيلانثار",
+      "nationality_ar": "الهند"
+    }
+  },
+  {
+    "persona_id": "SYN-P02",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 2: visa missing at first, uploaded later",
+    "story_ar": "السيناريو 2: الإقامة غير مرفقة في البداية ثم أرفقت لاحقاً",
+    "uae_pass_ref": "MOCK-UAEPASS-P02",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P02",
+      "given_name": "Yaman",
+      "family_name": "Fikrani",
+      "nationality": "Egypt",
+      "given_name_ar": "يمان",
+      "family_name_ar": "فكراني",
+      "nationality_ar": "مصر"
+    }
+  },
+  {
+    "persona_id": "SYN-P03",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 3: the Grade 4 certificate shows the full lineage name, not the passport name (needs a person)",
+    "story_ar": "السيناريو 3: شهادة الصف الرابع تحمل الاسم الرباعي بخلاف جواز السفر (يحتاج إلى موظف)",
+    "uae_pass_ref": "MOCK-UAEPASS-P03",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P03",
+      "given_name": "Salem",
+      "family_name": "Al Qarwani",
+      "nationality": "Oman",
+      "given_name_ar": "سالم",
+      "family_name_ar": "القرواني",
+      "nationality_ar": "عُمان"
+    }
+  },
+  {
+    "persona_id": "SYN-P04",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 4: prompt injection in the chat and inside a document",
+    "story_ar": "السيناريو 4: محاولة تلاعب بالتعليمات في المحادثة وداخل مستند",
+    "uae_pass_ref": "MOCK-UAEPASS-P04",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P04",
+      "given_name": "Mateo",
+      "family_name": "Lumarin",
+      "nationality": "Philippines",
+      "given_name_ar": "ماتيو",
+      "family_name_ar": "لومارين",
+      "nationality_ar": "الفلبين"
+    }
+  },
+  {
+    "persona_id": "SYN-P05",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 5: document verification service times out or returns bad data",
+    "story_ar": "السيناريو 5: خدمة التحقق من المستندات لا تستجيب أو ترسل بيانات تالفة",
+    "uae_pass_ref": "MOCK-UAEPASS-P05",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P05",
+      "given_name": "Zaid",
+      "family_name": "Thamroun",
+      "nationality": "Jordan",
+      "given_name_ar": "زيد",
+      "family_name_ar": "ثامرون",
+      "nationality_ar": "الأردن"
+    }
+  },
+  {
+    "persona_id": "SYN-P06",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Scenario 6: rule bypass or unauthorised approval attempt",
+    "story_ar": "السيناريو 6: محاولة تجاوز القواعد أو طلب موافقة غير مصرح بها",
+    "uae_pass_ref": "MOCK-UAEPASS-P06",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P06",
+      "given_name": "Hadi",
+      "family_name": "Nurvaz",
+      "nationality": "Pakistan",
+      "given_name_ar": "هادي",
+      "family_name_ar": "نورواز",
+      "nationality_ar": "باكستان"
+    }
+  },
+  {
+    "persona_id": "SYN-P07",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: completed Grade 12, belongs to a different service",
+    "story_ar": "إضافي: أنهى الصف الثاني عشر، وهذا يتبع خدمة أخرى",
+    "uae_pass_ref": "MOCK-UAEPASS-P07",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P07",
+      "given_name": "Lior",
+      "family_name": "Vanterre",
+      "nationality": "France",
+      "given_name_ar": "ليور",
+      "family_name_ar": "فانتير",
+      "nationality_ar": "فرنسا"
+    }
+  },
+  {
+    "persona_id": "SYN-P08",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: French certificates with legal translations",
+    "story_ar": "إضافي: شهادات بالفرنسية مع ترجمة قانونية",
+    "uae_pass_ref": "MOCK-UAEPASS-P08",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P08",
+      "given_name": "Elodie",
+      "family_name": "Marquelle",
+      "nationality": "Belgium",
+      "given_name_ar": "إيلودي",
+      "family_name_ar": "ماركيل",
+      "nationality_ar": "بلجيكا"
+    }
+  },
+  {
+    "persona_id": "SYN-P09",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extreme case: completed Grade 1 only (outside Grades 2 to 11)",
+    "story_ar": "حالة استثنائية: أنهى الصف الأول فقط (خارج نطاق الصفوف 2 إلى 11)",
+    "uae_pass_ref": "MOCK-UAEPASS-P09",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P09",
+      "given_name": "Rayan",
+      "family_name": "Odelmark",
+      "nationality": "Canada",
+      "given_name_ar": "ريان",
+      "family_name_ar": "أودلمارك",
+      "nationality_ar": "كندا"
+    }
+  },
+  {
+    "persona_id": "SYN-P10",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extreme case: last certificate is a mid-year term statement",
+    "story_ar": "حالة استثنائية: آخر شهادة إفادة فصلية صادرة خلال العام الدراسي",
+    "uae_pass_ref": "MOCK-UAEPASS-P10",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P10",
+      "given_name": "Karim",
+      "family_name": "Haddani",
+      "nationality": "Sudan",
+      "given_name_ar": "كريم",
+      "family_name_ar": "حدّاني",
+      "nationality_ar": "السودان"
+    }
+  },
+  {
+    "persona_id": "SYN-P11",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: GCC national, complete application without a UAE visa (not required for GCC nationals)",
+    "story_ar": "إضافي: طالب من دول مجلس التعاون، طلب مكتمل دون إقامة (لا تلزم لأبناء دول المجلس)",
+    "uae_pass_ref": "MOCK-UAEPASS-P11",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P11",
+      "given_name": "Nasser",
+      "family_name": "Al Nadrawi",
+      "nationality": "Kuwait",
+      "given_name_ar": "ناصر",
+      "family_name_ar": "النظراوي",
+      "nationality_ar": "الكويت"
+    }
+  },
+  {
+    "persona_id": "SYN-P12",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: expired passport, and the last certificate sent as a phone photo (JPG) instead of a PDF",
+    "story_ar": "إضافي: جواز سفر منتهي الصلاحية، وآخر شهادة مرسلة كصورة هاتف (JPG) بدلاً من PDF",
+    "uae_pass_ref": "MOCK-UAEPASS-P12",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P12",
+      "given_name": "Baraka",
+      "family_name": "Mwendani",
+      "nationality": "Kenya",
+      "given_name_ar": "باراكا",
+      "family_name_ar": "موينداني",
+      "nationality_ar": "كينيا"
+    }
+  },
+  {
+    "persona_id": "SYN-P13",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: German certificates sent first without the legal translations, then the translations",
+    "story_ar": "إضافي: شهادات بالألمانية أرسلت أولاً دون الترجمة القانونية، ثم أرسلت الترجمات",
+    "uae_pass_ref": "MOCK-UAEPASS-P13",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P13",
+      "given_name": "Jonas",
+      "family_name": "Weidrich",
+      "nationality": "Germany",
+      "given_name_ar": "يوناس",
+      "family_name_ar": "فايدريش",
+      "nationality_ar": "ألمانيا"
+    }
+  },
+  {
+    "persona_id": "SYN-P14",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: the document check cannot confirm one certificate is authentic (needs a person)",
+    "story_ar": "إضافي: تعذر التأكد من صحة إحدى الشهادات (يحتاج إلى موظف)",
+    "uae_pass_ref": "MOCK-UAEPASS-P14",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P14",
+      "given_name": "Nethmi",
+      "family_name": "Rajapathi",
+      "nationality": "Sri Lanka",
+      "given_name_ar": "نيثمي",
+      "family_name_ar": "راجاباثي",
+      "nationality_ar": "سريلانكا"
+    }
+  },
+  {
+    "persona_id": "SYN-P15",
+    "label": "SYNTHETIC DATA - FOR PROTOTYPE ONLY - NOT A REAL PERSON OR DOCUMENT",
+    "story": "Extra: certificates for Grade 9 and Grade 7 (the Grade 8 year is missing)",
+    "story_ar": "إضافي: شهادتا الصف التاسع والصف السابع (ينقص الصف الثامن)",
+    "uae_pass_ref": "MOCK-UAEPASS-P15",
+    "applicant_display_name": "Parent (synthetic UAE Pass account)",
+    "student": {
+      "student_ref": "SYN-STU-P15",
+      "given_name": "Ilyas",
+      "family_name": "Benkhadra",
+      "nationality": "Morocco",
+      "given_name_ar": "إلياس",
+      "family_name_ar": "بنخضرة",
+      "nationality_ar": "المغرب"
+    }
+  }
+]
