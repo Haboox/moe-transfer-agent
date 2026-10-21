@@ -121,6 +121,16 @@ def new_session() -> None:
         ss.pop(k, None)
 
 
+def clear_cases() -> None:
+    """Start the demonstration's case list again (an empty staff portal, for example before a recording). The old
+    list stays on disk in runtime/sessions/ and its audit logs in logs/; it is only no longer shown."""
+    ss = st.session_state
+    ss.store_path = RUNTIME_DIR / "sessions" / f"cases_{uuid4().hex[:12]}.json"
+    ss.session_ids = []
+    ss.pop("staff_sel", None)
+    new_session()
+
+
 def config_key() -> tuple:
     ss = st.session_state
     return (ss.persona, ss.provider, ss.failure, ss.lang, ss.open_nat if ss.persona == OPEN_ID else None)

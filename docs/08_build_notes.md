@@ -3,6 +3,22 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.14: easier to use (21 October, night)
+
+* **Demo controls apply at once:** picking a situation, the AI model or a simulated problem starts the demonstration
+  with it (a toast says what started); no separate button press. "Start new session" stays, to start the same
+  situation again. The controls are numbered (1 situation, 2 AI model, 3 system problem), each situation reads
+  scenario first ("Scenario 3: ...") with the applicant underneath, and a short "How to use this demonstration"
+  guide is inside.
+* **Clear all cases:** empties the staff portal's case list (for example before a recording); logs are kept.
+* **Suggested questions:** one-click chips above the message box, in the page's language and for the stage the
+  request is at (start; something missing; submitted; another service). They go through the agent exactly like
+  typed messages. Testing them found that "can you approve it anyway?" in Arabic was not recognised as a request to
+  bend the rules; the Arabic wording list was widened (tested both ways: approve-anyway is caught, "has it been
+  approved?" is a status question).
+
+Results (no AI, repeatable): 531 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations.
+
 ## Version 2.13: document viewer, nationality picks the documents, new staff portal; live break-testing (21 October, night)
 
 Asked by Wisam, all built and deployed online first:

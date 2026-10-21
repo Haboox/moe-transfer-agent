@@ -30,6 +30,33 @@ S = {
     "dc_failure": ("Simulate a Ministry system problem", "محاكاة عطل في أحد أنظمة الوزارة"),
     "dc_inner": ("Show how the agent decides", "عرض كيف يتخذ الوكيل قراراته"),
     "dc_start": ("Start new session", "بدء جلسة جديدة"),
+    "dc_start_help": ("Start the same situation again with an empty chat", "إعادة بدء الحالة نفسها بمحادثة فارغة"),
+    "dc_restarted": ("Started again.", "تمت إعادة البدء."),
+    "dc_howto": ("Every choice applies at once and starts the demonstration again.",
+                 "كل اختيار يُطبَّق فوراً ويعيد بدء العرض."),
+    "dc_applied": ("Started: {x}", "بدأ: {x}"),
+    "dc_inner_help": ("Shows the rules check and every step the agent took, next to the chat",
+                      "يعرض فحص الشروط وكل خطوة قام بها الوكيل بجانب المحادثة"),
+    "dc_clear": ("Clear all cases", "مسح جميع الطلبات"),
+    "dc_clear_help": ("Empty the staff portal's case list, for example before a recording (logs are kept)",
+                      "إفراغ قائمة الطلبات في بوابة الموظفين، مثلاً قبل التسجيل (تبقى السجلات محفوظة)"),
+    "dc_cleared": ("All cases cleared: the staff portal is empty.", "تم مسح جميع الطلبات: بوابة الموظفين فارغة."),
+    "dc_guide": ("How to use this demonstration", "طريقة استخدام هذا العرض"),
+    "dc_guide_body": (
+        "1. **Pick a situation** above: it starts at once in the parent portal.\n"
+        "2. **Ask the assistant** anything, or tap a suggested question above the message box.\n"
+        "3. **Tick documents and press Attach selected.** Use View to open any document on the page.\n"
+        "4. **Pay** in the payment window with the test card that is already filled in.\n"
+        "5. Open the **Staff portal** to see the case, its evidence and timeline, and record the officer's decision; "
+        "the parent sees it at once.\n"
+        "6. **عربي** switches the whole portal to Arabic; the moon button switches to dark mode.",
+        "1. **اختر حالة** من الأعلى: تبدأ فوراً في بوابة ولي الأمر.\n"
+        "2. **اسأل المساعد** أي سؤال، أو اضغط على أحد الأسئلة المقترحة فوق مربع الرسالة.\n"
+        "3. **حدد المستندات واضغط إرفاق المحدد.** استخدم عرض لفتح أي مستند في الصفحة.\n"
+        "4. **ادفع** في نافذة الدفع ببطاقة الاختبار المعبأة مسبقاً.\n"
+        "5. افتح **بوابة الموظفين** لرؤية الطلب وأدلته ومراحله وتسجيل قرار الموظف؛ ويراه ولي الأمر فوراً.\n"
+        "6. **English** يحوّل البوابة كاملة إلى الإنجليزية؛ وزر القمر يحوّل إلى الوضع الداكن."),
+    "sugg_label": ("Suggested questions", "أسئلة مقترحة"),
     "dc_changed": ("Settings changed: press Start new session to apply.", "تم تغيير الإعدادات: اضغط بدء جلسة جديدة للتطبيق."),
     "dc_check": ("Check again", "إعادة الفحص"),
     "dc_load": ("Load model", "تحميل النموذج"),

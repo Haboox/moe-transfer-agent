@@ -114,3 +114,49 @@ def test_staff_portal_in_arabic_with_no_cases():
     at.run()
     assert not at.exception
     assert any("الطلبات" in str(t.label) for t in at.tabs)
+
+
+# ------------------------------------------------------------------ quality of life (21 October, night)
+def test_picking_a_situation_starts_it_at_once():
+    at = _run()
+    first = at.session_state["agent"].state.session_id
+    at.radio(key="dc_persona").set_value("SYN-P03").run()
+    assert not at.exception
+    agent = at.session_state["agent"]
+    assert agent.state.persona_id == "SYN-P03" and agent.state.session_id != first
+
+
+def test_changing_the_simulated_problem_starts_again_with_it():
+    at = _run()
+    at.radio(key="dc_persona").set_value("SYN-P01").run()
+    at.selectbox(key="dc_failure").set_value("payment_down").run()
+    assert not at.exception and at.session_state["failure"] == "payment_down"
+    assert at.session_state["config"][2] == "payment_down"
+
+
+def test_clear_all_cases_empties_the_staff_portal():
+    at = _run()
+    _start(at, "SYN-P01")
+    _attach_all(at)                       # opens the payment window; a case is created after payment
+    agent = at.session_state["agent"]
+    agent.complete_payment("card", {"name": "x", "number": "4242424242424242", "expiry": "12/29", "cvv": "123"})
+    at.chat_input[0].set_value("Paid").run()
+    at.run()
+    assert at.session_state["agent"].backend.cases.list()
+    next(b for b in at.button if b.label == "Clear all cases").click().run()
+    assert not at.exception and not at.session_state["agent"].backend.cases.list()
+
+
+@pytest.mark.parametrize("lang", ["en", "ar"])
+def test_suggested_questions_are_offered_and_send_a_message(lang):
+    at = _run()
+    if lang == "ar":
+        next(b for b in at.button if b.key == "lang_btn").click().run()
+    pills = [p for p in at.get("button_group") if p.key and str(p.key).startswith("sugg_")]
+    assert pills, "no suggestions shown"
+    q = "What documents do I need?" if lang == "en" else "ما المستندات المطلوبة؟"
+    pills[0].set_value(q).run()
+    at.run()
+    assert not at.exception
+    chat = at.session_state["chat"]
+    assert any(m["role"] == "user" and m["text"] == q for m in chat) and chat[-1]["role"] == "assistant"

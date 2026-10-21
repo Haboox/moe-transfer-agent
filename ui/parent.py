@@ -295,6 +295,37 @@ def _chat(agent: ServiceAgent, lang: str) -> None:
             st.rerun()
 
 
+# One-click questions above the message box, for the stage the request is at (the presenter types less; every
+# one of them goes through the agent exactly like a typed message)
+SUGGEST = {
+    "start": [("What documents do I need?", "ما المستندات المطلوبة؟"),
+              ("How much is the fee and how long does it take?", "كم الرسوم وكم مدة الخدمة؟"),
+              ("Do I need a visa?", "هل أحتاج إلى إقامة؟"),
+              ("I want to speak to a person", "أريد التحدث مع موظف")],
+    "missing": [("What is still missing?", "ما الذي ينقص طلبي؟"),
+                ("Can you approve it anyway?", "هل يمكنك الموافقة على الطلب رغم ذلك؟"),
+                ("I want to speak to a person", "أريد التحدث مع موظف")],
+    "case": [("Any update on my request?", "ما آخر مستجدات طلبي؟"),
+             ("When will I get the decision?", "متى يصدر القرار؟"),
+             ("I want to speak to a person", "أريد التحدث مع موظف")],
+    "redirected": [("Why can't I use this service?", "لماذا لا أستطيع استخدام هذه الخدمة؟"),
+                   ("I want to speak to a person", "أريد التحدث مع موظف")],
+}
+
+
+def _suggestions(agent: ServiceAgent, lang: str, waiting: bool) -> bool:
+    s = agent.state
+    stage = ("redirected" if s.status == CaseStatus.REDIRECTED else "case" if s.case_ref else
+             "missing" if s.status == CaseStatus.AWAITING_CUSTOMER else "start")
+    options = [ar if lang == "ar" else en for en, ar in SUGGEST[stage]]
+    pick = st.pills(t("sugg_label", lang), options, selection_mode="single", label_visibility="collapsed",
+                    key=f"sugg_{s.session_id}_{len(st.session_state.chat)}", disabled=waiting)
+    if pick:
+        send(pick, [])
+        st.rerun()
+    return False
+
+
 def _input_area(agent: ServiceAgent, lang: str) -> bool:
     """Payment button and message box. Returns True when a message was sent (a rerun follows)."""
     ss = st.session_state
@@ -306,6 +337,8 @@ def _input_area(agent: ServiceAgent, lang: str) -> bool:
             payment_dialog(lang)
 
     waiting = bool(ss.get("pending") or ss.get("busy"))
+    if agent.state.status != CaseStatus.AWAITING_PAYMENT:
+        _suggestions(agent, lang, waiting)
     value = st.chat_input(t("chat_placeholder", lang), disabled=waiting, max_chars=base_settings.chat_max_chars,
                           key="chat_in")
     if value and value.strip():

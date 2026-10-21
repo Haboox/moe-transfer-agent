@@ -11,6 +11,7 @@ Top bar (one click each):
 """
 import hmac
 import os
+from html import escape
 
 import streamlit as st
 
@@ -33,7 +34,7 @@ from ui import parent, staff  # noqa: E402  (after the settings are in place)
 from ui.i18n import t  # noqa: E402
 from agent.countries import names, shown  # noqa: E402
 from agent.mocks import OPEN_ID  # noqa: E402
-from ui.session import (FAILURES, PROVIDERS, ai_status, base_settings, config_key, defaults,  # noqa: E402
+from ui.session import (FAILURES, PROVIDERS, ai_status, base_settings, clear_cases, defaults,  # noqa: E402
                         new_session, persona_ids, persona_story, persona_title)
 from ui.theme import apply_streamlit_theme, css, logo_data_uri  # noqa: E402
 
@@ -118,7 +119,21 @@ with r_text:
 with r_ctrl:
     with st.popover(t("demo_controls", lang), icon=":material/tune:", width="stretch"):
         st.markdown(f"**{t('dc_title', lang)}**")
+        st.caption(t("dc_howto", lang))
         pids = persona_ids()
+
+        def apply_now(what: str) -> None:
+            """Every choice here applies at once: the demonstration restarts with it (no extra button press)."""
+            ss.persona = ss.get("dc_persona", ss.persona)
+            ss.provider = ss.get("dc_provider", ss.provider)
+            ss.failure = ss.get("dc_failure", ss.failure)
+            new_session()
+            label = {"persona": persona_story(ss.persona, lang), "provider": t("prov_" + ss.provider, lang),
+                     "failure": t("fail_" + ss.failure, lang)}[what]
+            ss.flash = t("dc_applied", lang, x=label)
+
+        # 1. the test situation: what is tested first, who the applicant is underneath
+        st.markdown(f"<div class='h5'>1 · {escape(t('dc_applicant', lang))}</div>", unsafe_allow_html=True)
         # The open test's nationality comes first (it is the default test), so it is never pushed below the list.
         if ss.get("dc_persona", ss.persona) == OPEN_ID:
             nats = names(lang)
@@ -139,19 +154,24 @@ with r_ctrl:
             if not ss.open_nat:
                 st.caption(t("dc_open_nat_none", lang))
         # A list, not a drop-down: every test situation is readable in full without opening anything
-        ss.persona = st.radio(t("dc_applicant", lang), pids, index=pids.index(ss.persona),
-                              format_func=lambda p: persona_title(p, lang),
-                              captions=[persona_story(p, lang) for p in pids], key="dc_persona")
-        ss.provider = st.radio(t("dc_model", lang), PROVIDERS, index=PROVIDERS.index(ss.provider),
-                               format_func=lambda p: t("prov_" + p, lang), horizontal=True)
+        st.radio(t("dc_applicant", lang), pids, index=pids.index(ss.persona), label_visibility="collapsed",
+                 format_func=lambda p: persona_story(p, lang),
+                 captions=[persona_title(p, lang) for p in pids], key="dc_persona",
+                 on_change=apply_now, args=("persona",))
+
+        # 2. the AI model
+        st.markdown(f"<div class='h5'>2 · {escape(t('dc_model', lang))}</div>", unsafe_allow_html=True)
+        st.radio(t("dc_model", lang), PROVIDERS, index=PROVIDERS.index(ss.provider), label_visibility="collapsed",
+                 format_func=lambda p: t("prov_" + p, lang), horizontal=True, key="dc_provider",
+                 on_change=apply_now, args=("provider",))
         colour, status = ai_status(ss.provider, lang)
-        st.markdown(f"<div class='muted'><span class='dot' style='background:{colour}'></span>{status}</div>",
+        c1, c2 = st.columns([3, 2], vertical_alignment="center")
+        c1.markdown(f"<div class='muted'><span class='dot' style='background:{colour}'></span>{status}</div>",
                     unsafe_allow_html=True)
-        b1, b2 = st.columns(2)
-        if b1.button(t("dc_check", lang), width="stretch"):
+        if c2.button(t("dc_check", lang), width="stretch", type="tertiary", icon=":material/refresh:"):
             ai_status.clear()
             st.rerun()
-        if ss.provider == "ollama" and b2.button(t("dc_load", lang), width="stretch"):
+        if ss.provider == "ollama" and st.button(t("dc_load", lang), width="stretch"):
             from agent.llm import warm_up
             with st.spinner(t("dc_loading", lang)):
                 try:
@@ -160,15 +180,28 @@ with r_ctrl:
                     st.error(str(e))
             ai_status.clear()
             st.rerun()
+
+        # 3. a Ministry system problem, and how much of the agent's work to show
+        st.markdown(f"<div class='h5'>3 · {escape(t('dc_failure', lang))}</div>", unsafe_allow_html=True)
         fails = list(FAILURES)
-        ss.failure = st.selectbox(t("dc_failure", lang), fails, index=fails.index(ss.failure),
-                                  format_func=lambda f: t("fail_" + f, lang))
-        ss.show_inner = st.toggle(t("dc_inner", lang), value=ss.show_inner)
-        if st.button(t("dc_start", lang), type="primary", width="stretch", icon=":material/restart_alt:"):
+        st.selectbox(t("dc_failure", lang), fails, index=fails.index(ss.failure), label_visibility="collapsed",
+                     format_func=lambda f: t("fail_" + f, lang), key="dc_failure",
+                     on_change=apply_now, args=("failure",))
+        ss.show_inner = st.toggle(t("dc_inner", lang), value=ss.show_inner, help=t("dc_inner_help", lang))
+
+        st.divider()
+        r1, r2 = st.columns(2)
+        if r1.button(t("dc_start", lang), type="primary", width="stretch", icon=":material/restart_alt:",
+                     help=t("dc_start_help", lang)):
             new_session()
+            ss.flash = t("dc_restarted", lang)
             st.rerun()
-        if ss.get("config") != config_key():
-            st.caption(t("dc_changed", lang))
+        if r2.button(t("dc_clear", lang), width="stretch", icon=":material/delete_sweep:", help=t("dc_clear_help", lang)):
+            clear_cases()
+            ss.flash = t("dc_cleared", lang)
+            st.rerun()
+        with st.expander(t("dc_guide", lang), icon=":material/help:"):
+            st.markdown(t("dc_guide_body", lang))
 
 if ss.get("flash"):
     st.toast(ss.pop("flash"))

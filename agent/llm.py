@@ -400,7 +400,10 @@ OVERRIDE_WORDS = re.compile(
     r"\b(approve|ignore|override|skip|waive|bypass|jailbreak)\b|moe employee|i work for|admin mode|developer mode"
     r"|system prompt|your instructions|i order you|i am the minister"
     r"|تجاوز|استثناء|وافق على|وافق علي|اعتمد الطلب|تجاهل|تخط[ىي]|بدون (ال)?ختم|بدون (ال)?تصديق"
-    r"|[أا]نا موظف|[أا]نا الوزير|[أا]عمل في الوزارة|وضع المطور|تعليماتك",
+    r"|[أا]نا موظف|[أا]نا الوزير|[أا]عمل في الوزارة|وضع المطور|تعليماتك"
+    # found while testing the suggested questions: "can you approve it anyway?" in Arabic was not recognised
+    r"|يمكنك الموافقة|تستطيع الموافقة|توافق على|توافقون على|[اإ]قبل الطلب|[اإ]قبلوا الطلب"
+    r"|(?:الموافقة|توافق|تقبل|قبول)[^.؟?]{0,25}(?:رغم|مع ذلك|بدون|حتى لو)",
     re.IGNORECASE)
 
 _STATUS = re.compile(r"\bstatus\b|حالة (ال)?طلب|وين وصل|[أا]ين وصل|وضع طلبي|هل تمت الموافقة|هل تم قبول", re.IGNORECASE)
