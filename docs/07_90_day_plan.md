@@ -1,56 +1,81 @@
 # 07 Ninety Day Plan
 
+The designed PDF of this plan is deliverable 05 (`05_90_Day_Plan.pdf`); this file holds the same content in plain text.
 Case study asks for: *milestones, dependencies, owned risks, success measures.*
-Goal: move from this prototype to a controlled pilot of the agent on the real service with real staff,
-without the agent ever deciding eligibility.
+
+**Objective.** In 90 days, take the agent from a prototype on synthetic data to a controlled pilot on the real service, with real officers and a small share of real applicants, and decide on day 90, on evidence, whether to scale. The agent never gains decision power along the way: rules decide, the guard acts, officers approve.
+
+## Gates
+
+| Gate | Day | Passes when |
+|---|---|---|
+| G1 | 30 | rules signed off; baseline measured; hosting decided; data classification agreed; test access granted |
+| G2 | 55 | four systems integrated in test, contract tests pass; evaluation set scores meet the guardrails; red team findings with no open high |
+| G3 | 72 | shadow mode agrees with officers on every case the rules decide; Arabic reviewed; DPIA closed; officers trained |
+| G4 | 90 | pilot guardrails held every day; success measures met or explained; recommendation to scale, extend or stop |
 
 ## Milestones
 
-| Days | Milestone | Done when |
-|---|---|---|
-| 1 to 15 | **Confirm the rules with the service owner** | Every rule R-01 to R-15 and assumption A-01 to A-15 signed off or corrected by the Equivalency team; the differences between the Arabic and English cards (MoFA wording, document count, "decision" vs "certificate") settled and both cards aligned |
-| 1 to 20 | **Baseline the current service** | Measured from case data: share of applications returned for missing documents, average processing time, top rejection reasons (replaces the card-based pain points in `01_current_state_map.md`) |
-| 15 to 35 | **Security and data approvals** | Data classification agreed, hosting decision made (on-premise or approved cloud), threat model and penetration test of the agent and its tools scheduled |
-| 20 to 45 | **Replace mocks with test integrations** | Identity, document verification, payment and case management connected in a test environment through the same tool contracts; contract tests pass against them |
-| 30 to 50 | **Arabic review and accessibility** | The prototype already runs fully in Arabic (Arabic card, Arabic rule details, Arabic documents, right-to-left portal); the Ministry's Arabic language team reviews every fixed message, and an accessibility check (screen readers in Arabic and English, contrast) is passed |
-| 40 to 60 | **Staff console and evaluation set** | Officers use the review screen on historical anonymised cases; an evaluation set of at least 200 real-pattern cases built with expected outcomes |
-| 55 to 70 | **Shadow mode** | Agent runs beside officers on live applications without customer contact; its rule outcomes compared with officer decisions |
-| 70 to 90 | **Limited pilot** | Agent available to a small share of applicants, every escalation and a sample of submissions reviewed daily; go or no-go report on day 90 |
+| | Day | Milestone | Done when | Owner |
+|---|---|---|---|---|
+| M1 | 5 | Mobilised | Steering group named, weekly cadence set, RACI agreed, this plan's risk register adopted | AI Center of Excellence |
+| M2 | 15 | Service rules signed off | R-01 to R-15 and A-01 to A-20 confirmed or corrected by the service owner; the English and Arabic cards aligned (MoFA wording, document count, "decision" or "certificate"); every change shipped with its test | Equivalency Services |
+| M3 | 20 | Current service baselined | From case data: share returned for missing documents, processing time, top rejection reasons, volume by grade and country, calls to the toll free number about this service | Data Office |
+| M4 | 30 | Approvals in place (G1) | Data classification agreed; hosting decided (on premise or approved cloud); DPIA started; test environment access for the four systems | Information Security |
+| M5 | 45 | Integrated in test | Identity, verification, payment and case management connected through the existing contracts; the prototype's contract and failure tests pass against them; circuit breaker added | IT Integration |
+| M6 | 50 | Evaluation set ready | At least 200 anonymised cases with officer outcomes, in both languages, covering every rule result; the agent meets the guardrails on all of them | AI Center of Excellence |
+| M7 | 55 | Security tested, Arabic reviewed (G2) | Red team exercise and penetration test, no open high finding; Arabic fixed messages approved by the Ministry; accessibility check passed in both languages | Information Security |
+| M8 | 60 | Officers ready | Staff console used on historical cases; referral procedure written; officers trained | Equivalency Services |
+| M9 | 72 | Shadow mode complete (G3) | The agent runs beside officers on live applications with no parent contact; agreement on every rule decided case; every disagreement explained | AI Center of Excellence |
+| M10 | 90 | Pilot report, go or no go (G4) | Assistant offered to a small share of applicants; every referral and a daily sample reviewed; measures against the day 20 baseline; recommendation | Steering group |
 
 ## Dependencies
 
-| Dependency | Needed for | Owner |
-|---|---|---|
-| Service owner time to review rules | Rule sign-off | Equivalency Services |
-| API access to identity, verification, payment, case systems (test environments) | Replacing mocks | IT Integration |
-| Hosting approval for the model | Any use beyond the prototype | Information Security |
-| Anonymised historical cases | Baseline, evaluation set, shadow mode | Data Office |
-| Officers available for review and feedback | Staff console, shadow mode | Equivalency Services |
-| Legal and data protection review | Pilot | Legal |
+| | Dependency | Needed by | Owner | If late | Fallback |
+|---|---|---|---|---|---|
+| D1 | Service owner time to review the rules | day 15 | Equivalency Services | every later step slips | sign off the highest volume rules first |
+| D2 | Anonymised historical cases with outcomes, and volume data | day 20 | Data Office | weaker baseline and evaluation | extend the synthetic set from case patterns |
+| D3 | Approved hosting for the model and the agent | day 30 | Information Security and IT | no real data can be processed | a smaller model on an already approved environment |
+| D4 | Test APIs for identity, verification, payment and case management | day 20 | IT Integration and system owners | integration slips | integrate the ready systems; keep mocks for the rest in test |
+| D5 | Arabic language review | day 50 | Ministry communications | G2 slips | pilot in the reviewed language only |
+| D6 | Legal and data protection review | day 65 | Legal | no pilot | extend shadow mode |
+| D7 | Officers for shadow review and the pilot | days 55 to 90 | Equivalency Services | fewer cases compared | smaller daily sample, longer shadow |
+| D8 | Payment reconciliation procedure | day 65 | Finance | pilot without payment | pilot the check and guidance steps first |
 
 ## Owned risks
 
-| Risk | Likelihood / impact | Owner | Mitigation already in the design | Further action |
-|---|---|---|---|---|
-| Model states an outcome or policy wrongly | Medium / High | AI Center of Excellence | Outcomes and requirements come from records (P-04, P-10); reply checker | Monitor every replaced reply; expand the evaluation set |
-| Rule misread from the card | Medium / High | Equivalency Services | Each rule cites its source; assumptions labelled | Sign-off on day 15; rule changes need a test |
-| Prompt injection through documents or chat | Medium / Medium | Information Security | No approve tool, guard, untrusted labelling, grounded escalation | Red-team exercise before the pilot |
-| Backend outages | Medium / Medium | IT Integration | Time limit, one retry, escalation, no guessing | Agree service levels with system owners |
-| Personal data exposure | Low / High | Data Office | Masking before logs and model; model sees no document numbers | Retention policy for logs; access control on the console |
-| Local model too slow at scale | High / Medium | AI Center of Excellence | Provider is one setting | Load test in shadow mode; size hardware or approved hosted model |
-| Arabic dialects and mixed Arabic-English messages misread | Medium / Medium | AI Center of Excellence | Language and grade checks by code; outcomes from records, so a misread can delay but not decide | Add Gulf, Levantine and Egyptian dialect samples to the evaluation set |
-| Payment integration | Medium / High | IT Integration + Finance | Model cannot set the amount; card details never reach the agent | Connect the real MoE e-payment page in test; reconcile receipts daily in the pilot |
-| Staff overloaded by escalations | Medium / Medium | Equivalency Services | Escalation only on true grounds (P-09); missing documents asked first | Track escalation rate weekly |
+| | Risk | Likelihood | Impact | Owner | Already in the design | Further action | Early warning |
+|---|---|---|---|---|---|---|---|
+| R1 | The model states an outcome, a requirement or a policy wrongly | 2 | 5 | AI Center of Excellence | Outcomes and status written from the record; card quoted word for word; reply checker | Weekly sample review of replies; every replaced reply investigated | replaced replies above 2% of turns |
+| R2 | A rule is misread from the card, or the two card versions disagree | 3 | 5 | Equivalency Services | Every rule cites its card source; 20 assumptions labelled; rules unit tested | Sign off by day 15; a rule change ships with its test | any shadow disagreement on a rule decided case |
+| R3 | Prompt injection through documents or chat | 3 | 4 | Information Security | No approval tool; guard and contracts; document text labelled untrusted; compromised model tests | Red team and penetration test before the pilot | security events per day |
+| R4 | Integrations late, or real systems differ from the mock contracts | 4 | 4 | IT Integration | Mocks already behind real shaped contracts with failure modes | Contract tests from week 3; integrate the two ready systems first | contract test failures |
+| R5 | Ministry system outages during the pilot | 3 | 3 | IT Integration | Time limit, one retry, never guess; paid referral to an officer | Circuit breaker per system; service levels agreed with system owners | backend failure rate |
+| R6 | Personal data exposure | 2 | 5 | Data Office | Masking before logs; the model never sees names, card data or full numbers; leak scans | DPIA; log retention and access control; leak alerts | any leak scan finding |
+| R7 | The model is too slow or too costly at scale | 4 | 3 | AI Center of Excellence | Provider is one setting; fixed replies need no model call | Load test in shadow mode; size hosting | 95th percentile reply above 10 s |
+| R8 | Arabic dialects or mixed messages misread | 3 | 3 | AI Center of Excellence | Language and grades read by code; outcomes from the record, so a misread delays but never decides | Gulf, Levantine and Egyptian samples in the evaluation set | clarification rate by language |
+| R9 | Officers overloaded by referrals | 3 | 3 | Equivalency Services | Referral only on grounds true in the record; missing items asked first; referrals paid for | Track referral share weekly; tune with the service owner | referral share above baseline plan |
+| R10 | Payment reconciliation errors | 2 | 4 | Finance | One receipt per case; the agent never handles card data | Daily reconciliation in the pilot | unmatched receipts |
+| R11 | Parents or staff do not trust the assistant | 3 | 3 | Equivalency Services | Clear labelling; toll free number always offered; officer decides every case | Usability sessions in both languages; satisfaction survey | drop off before submission |
 
-## Success measures (for the go or no-go decision on day 90)
+## Success measures
 
-| Measure | Target | How measured |
+Guardrails must hold every day of shadow mode and the pilot; one breach pauses the pilot until the cause is fixed and a test is added.
+
+| Measure | Target by day 90 | How measured |
 |---|---|---|
-| Rule agreement with officers (shadow mode) | 100% on cases the rules decide | Agent rule outcome vs officer decision |
-| Invented approvals or outcomes reaching a customer | Zero | Reply checker log, sample review |
-| Correct escalation | 100% of cases needing a person reach one | Escalation log vs officer review |
-| Applications returned for missing documents | Lower than the day 20 baseline | Case system data |
-| Tool success (excluding injected failures) | 99% or better | Audit trail |
-| Sensitive data in logs or replies | Zero | Automated leak checks on every log |
-| Arabic and English parity | Same outcome for the same case in both languages, 100% | Paired scenario runs (S1 vs S1-AR ...) on every release |
-| Applicant satisfaction | At or above the current channel | Post-service survey |
+| Invented approvals or outcomes reaching a parent | zero | reply checker log and sample review |
+| Actions outside the rules (submission without ELIGIBLE and fee, unpaid or ungrounded referral) | zero | automated audit trail checks |
+| Document numbers or names in replies or logs | zero | automated leak scan on every log |
+| Agreement with officers on cases the rules decide | 100% | shadow and pilot comparison |
+| Arabic and English parity on paired cases | 100% same outcome | paired scenario runs on every release |
+| Applications returned for missing documents | at least 30% below the day 20 baseline | case management data |
+| Cases needing a person that reach one | 100% | referral log against officer review |
+| Referrals the officer agrees were needed | 90% or more | officer feedback on each referral |
+| Officer handling time per complete case | lower than baseline | case management timestamps |
+| Calls to the toll free number about this service | lower than baseline | contact centre data |
+| Tool success, excluding real outages | 99% or more | audit trail |
+| Reply time, 95th percentile | 10 seconds or less | per turn timing in the audit trail |
+| Assistant availability in service hours | 99% or more | monitoring |
+| Parent satisfaction | at or above the current channel | short survey after the service, both languages |
+| Requests started that end submitted or referred | higher than baseline | audit trail funnel |
