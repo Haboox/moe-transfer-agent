@@ -109,8 +109,8 @@ div.svc-title {{ font-size:2rem; line-height:1.25; font-weight:700; color:{c['te
 .p-grey {{ background:var(--chip); color:var(--muted); }}
 .steps {{ display:flex; gap:6px; margin:4px 0 12px; }}
 .step {{ flex:1 1 0; min-width:0; text-align:center; font-size:.76rem; padding:8px 4px; border-radius:8px;
-        background:var(--chip); color:var(--muted); border:1px solid var(--border); white-space:nowrap;
-        overflow:hidden; text-overflow:ellipsis; }}
+        background:var(--chip); color:var(--muted); border:1px solid var(--border); line-height:1.2;
+        display:flex; align-items:center; justify-content:center; overflow-wrap:normal; hyphens:none; }}
 .step.done {{ background:var(--goldsoft); color:var(--gold); border-color:var(--gold); }}
 .step.now {{ background:var(--gold); color:#fff; border-color:var(--gold); font-weight:700; }}
 .step.alert {{ background:{c['badbg']}; color:{c['bad']}; border-color:{c['bad']}; font-weight:600; }}
@@ -211,6 +211,7 @@ div[data-testid="stPopover"] button, div[data-testid="stPopoverButton"] {{ white
   .tablewrap {{ overflow-x:auto; }}
   .timeline .ev {{ grid-template-columns:62px 1fr; }} .timeline .what, .timeline .why {{ grid-column:1 / -1; }}
   div.svc-title {{ font-size:1.5rem; }}
+  .steps {{ flex-wrap:wrap; }} .step {{ flex:1 1 22%; font-size:.72rem; }}
 }}
 .tablewrap {{ max-width:100%; overflow-x:auto; }}
 </style>"""

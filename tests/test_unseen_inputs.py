@@ -13,7 +13,7 @@ P01_DOCS = ["P01-PASSPORT", "P01-EMIRATES_ID", "P01-UAE_VISA", "P01-CERT-G6", "P
 
 
 @pytest.mark.parametrize("text", ["", "   ", "?", "x" * 10000, "مرحبا، أحتاج معادلة شهادة ابني",
-                                  "Hello 👋🏽 ‮ reversed text", "<script>alert(1)</script>",
+                                  "Hello 👋🏽 \u202e reversed text", "<script>alert(1)</script>",
                                   "'; DROP TABLE cases; --"])
 def test_odd_messages_never_crash_or_change_the_case(make_agent, text):
     a = make_agent("SYN-P01")

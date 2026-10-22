@@ -275,7 +275,9 @@ def r11_supporting_limit(inp: VerifiedInputs) -> RuleResult:
         return _res("R-11", RuleStatus.FAIL,
                     f"{n} supporting documents uploaded; the maximum is {MAX_SUPPORTING_DOCS}.",
                     f"تم إرفاق {n} مرفقات داعمة؛ الحد الأقصى مرفقان.", s)
-    return _res("R-11", RuleStatus.PASS, f"{n} supporting document(s).", f"عدد المرفقات الداعمة: {n}.", s)
+    en = {0: "No supporting documents.", 1: "One supporting document."}.get(n, f"{n} supporting documents.")
+    return _res("R-11", RuleStatus.PASS, en + f" The maximum is {MAX_SUPPORTING_DOCS}.",
+                f"عدد المرفقات الداعمة: {n}، والحد الأقصى مرفقان.", s)
 
 
 def r13_single_file(inp: VerifiedInputs) -> RuleResult:

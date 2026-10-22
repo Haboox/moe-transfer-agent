@@ -30,7 +30,7 @@ from typing import Any, Optional
 import requests
 
 from .config import Settings
-from .language import asks_for_person, detect_language, stated_grade
+from .language import asks_for_person, asks_why_officer, detect_language, stated_grade
 
 
 class LLMError(Exception):
@@ -477,7 +477,7 @@ def heuristic_interpret(text: str) -> dict:
         intent, conf = "grade12_equivalency", 0.9
     elif asks_for_person(text):
         intent, conf = "request_human", 0.9
-    elif _STATUS.search(t):
+    elif _STATUS.search(t) or asks_why_officer(text):
         intent, conf = "case_status", 0.8
     elif _QUESTION.search(t):
         intent, conf = "question_about_service", 0.8

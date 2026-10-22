@@ -154,5 +154,27 @@ _ASK_PERSON = re.compile(
     re.IGNORECASE)
 
 
+# A question ABOUT a person's role is not a request to speak to one. Found in the final browser check: the suggested
+# question "Why does my request need an officer?" was answered with the toll-free number first.
+_ABOUT_PERSON = re.compile(r"\bwhy\b|\b(request|case|application)\s+(still\s+)?(needs?|requires?|goes|went|sent)\b"
+                           r"|\bلماذا\b|\bليش\b|\bليه\b", re.IGNORECASE)
+_SPEAK = re.compile(r"\b(speak|talk|chat)\s+(to|with)\b|التحدث|[أا]تحدث|[أا]كلم|التواصل", re.IGNORECASE)
+_FIRST_PERSON = re.compile(r"\b(i|i'd|i'm|me|we)\b|[أا]ريد|[أا]بغى|[أا]بي\b|بدي|[أا]ود|[أا]حتاج|حو[ّ]?لني|اربطني|وصلني",
+                           re.IGNORECASE)
+
+
 def asks_for_person(text: str) -> bool:
-    return bool(_ASK_PERSON.search(text or ""))
+    text = text or ""
+    if not _ASK_PERSON.search(text):
+        return False
+    # "Why does my request need an officer?" asks about the referral; "why can't I talk to a person" still asks
+    return not (_ABOUT_PERSON.search(text) and not _SPEAK.search(text) and not _FIRST_PERSON.search(text))
+
+
+# "Why does my request need an officer?" is answered from the case record (P-04), whichever model is used
+_WHY_OFFICER = re.compile(r"\bwhy\b[^?.!]*\b(officer|staff|employee|person|human|review\w*|referr\w*|escalat\w*)\b"
+                          r"|(لماذا|ليش|ليه)[^؟?.!]*(موظف|مراجع|إحال|احال|أحيل|احيل)", re.IGNORECASE)
+
+
+def asks_why_officer(text: str) -> bool:
+    return bool(_WHY_OFFICER.search(text or "")) and not asks_for_person(text)

@@ -54,6 +54,44 @@ def test_asking_for_a_person_needs_asking_words(text, asks):
     assert asks_for_person(text) is asks
 
 
+@pytest.mark.parametrize("text,asks", [
+    ("Why does my request need an officer?", False), ("لماذا يحتاج طلبي إلى موظف؟", False),
+    ("ليش طلبي يحتاج موظف", False), ("Does my application need an officer?", False),
+    ("I need an officer please", True), ("ابغى موظف عن الشهادة", True), ("أريد موظف", True),
+    ("Why? I want a person", True), ("why do I have to pay? I want to talk to a human", True),
+    ("ليش طلبي يحتاج موظف، ابغى موظف", True),
+])
+def test_a_question_about_the_officer_is_not_a_request_for_one(text, asks):
+    """Found in the final browser check: the suggested question 'Why does my request need an officer?' was
+    answered with the toll-free number instead of the reason for the referral."""
+    assert asks_for_person(text) is asks
+
+
+@pytest.mark.parametrize("lang,question,first,reason", [
+    ("en", "Why does my request need an officer?", "Grade 4 equivalency", "does not match the passport"),
+    ("ar", "لماذا يحتاج طلبي إلى موظف؟", "معادلة الصف الرابع", "لا يطابق الاسم في جواز السفر"),
+])
+def test_why_an_officer_is_answered_with_the_reason(make_agent, lang, question, first, reason):
+    a = make_agent("SYN-P03", ui_lang=lang)
+    a.handle_turn(first, ["P03-PASSPORT", "P03-EMIRATES_ID", "P03-CERT-G4", "P03-CERT-G3"])
+    assert a.state.status == CaseStatus.PENDING_HUMAN_REVIEW
+    r = a.handle_turn(question)
+    assert reason in r.reply and "80051115" not in r.reply
+    assert not any(e["event"] == "person_contact_given" for e in a.ctx.audit.events)
+    assert any(e["event"] == "referral_reason_given" for e in a.ctx.audit.events)
+
+
+def test_why_an_officer_is_answered_from_the_record_whatever_the_model_reads(make_agent):
+    """A live model may read the question as a general question about the service; the reason still comes from the
+    case record (P-04), not the service overview."""
+    from agent.llm import ScriptedLLM, heuristic_interpret
+    misread = dict(heuristic_interpret("What documents do I need?"), intent="question_about_service")
+    a = make_agent("SYN-P03", llm=ScriptedLLM([heuristic_interpret("Grade 4 equivalency"), misread]))
+    a.handle_turn("Grade 4 equivalency", ["P03-PASSPORT", "P03-EMIRATES_ID", "P03-CERT-G4", "P03-CERT-G3"])
+    r = a.handle_turn("Why does my request need an officer?")
+    assert "does not match the passport" in r.reply and "This service aims" not in r.reply
+
+
 def test_arabic_digits_and_names_are_normalised():
     assert to_ascii_digits("٨٠٠٥١١١٥") == "80051115"
     assert normalize_name("سالِم القَرواني") == normalize_name("سالم القرواني")

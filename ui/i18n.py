@@ -341,7 +341,8 @@ S = {
     "rules_h_detail": ("Detail", "التفاصيل"), "rules_h_source": ("Source", "المصدر"),
     "trace_title": ("Agent trace", "مسار عمل الوكيل"),
     "trace_stats": ("Model {m} · tool calls {c} · blocked {b} · backend failures {f} · recovered {r}",
-                    "النموذج {m} · استدعاءات الأدوات {c} · محظورة {b} · أعطال الأنظمة {f} · تم التعافي {r}"),
+                    "النموذج {m} · استدعاءات الأدوات {c} · محظورة {b} · أعطال الأنظمة {f} · تم التعافي {r}. "
+                    "تظهر الخطوات التقنية بالإنجليزية كما يسجّلها النظام."),
     # payment window
     "pay_title": ("Secure payment (simulated)", "الدفع الآمن (محاكاة)"),
     "pay_amount": ("Service fee", "رسوم الخدمة"),
@@ -406,6 +407,7 @@ S = {
     "case_docs": ("Documents checked", "المستندات التي تم فحصها"),
     "case_evidence": ("What the documents show (cells in red caused the referral)",
                       "ما تُظهره المستندات (الخانات باللون الأحمر هي سبب الإحالة)"),
+    "case_evidence_ok": ("What the documents show", "ما تُظهره المستندات"),
     "case_open_docs": ("Open the documents", "فتح المستندات"),
     "student_unknown": ("Identity record not available (the identity system did not answer)",
                         "سجل الهوية غير متاح (لم يستجب نظام الهوية)"),
@@ -429,7 +431,7 @@ S = {
     "audit_pick": ("Session", "الجلسة"),
     "audit_actors": ("Actors", "الجهات"),
     "audit_caption": ("Who acted, what happened and why (customer turn, card section, rule or policy). Sensitive values are masked before writing.",
-                      "من قام بالإجراء، وماذا حدث، ولماذا (رسالة العميل، بند في البطاقة، شرط أو سياسة). تُخفى البيانات الحساسة قبل الكتابة."),
+                      "من قام بالإجراء، وماذا حدث، ولماذا (رسالة العميل، بند في البطاقة، شرط أو سياسة). تُخفى البيانات الحساسة قبل الكتابة، ويظهر السبب كما سُجّل في السجل باللغة الإنجليزية."),
     "audit_none": ("No events yet.", "لا توجد أحداث بعد."),
     "audit_download": ("Download log (JSONL)", "تنزيل السجل (JSONL)"),
     "this_session": ("current parent session", "جلسة ولي الأمر الحالية"),

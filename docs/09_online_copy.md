@@ -10,7 +10,7 @@ walkthrough is the last fallback.
 | Part | Local (main) | Online copy (plan B) |
 |---|---|---|
 | Portal, rules, guard, mocks, payment window, staff portal, audit trail | This computer | Streamlit Community Cloud (United States), from a private GitHub repository |
-| Language model | `qwen3:8b` on this computer (Ollama) | A hosted model behind the OpenAI style API (`LLM_PROVIDER=hosted`): Groq by default, Google Gemini as the alternative |
+| Language model | `qwen3:8b` on this computer (Ollama) | `openai/gpt-oss-120b` on Groq, backup `openai/gpt-oss-20b`, through the OpenAI style API (`LLM_PROVIDER=hosted`); Google Gemini works too |
 | Settings | `.env` | The app's **Secrets** box on Streamlit (never in the repository) |
 | Data | Synthetic only | Synthetic only |
 | Who can open it | This computer only (`--server.address localhost`) | Anyone with the link https://moe-equivalency-demo.streamlit.app and the access code |
@@ -47,8 +47,8 @@ a Gemini model name in `HOSTED_MODEL`, with a Gemini API key.
 2. On https://share.streamlit.io, sign in with GitHub, choose **Create app**, pick the repository, branch `main`
    and main file `app.py`. Under **Advanced settings** choose Python 3.13 and paste the secrets above.
 3. Once it runs, set who may view it under **Share**: public (the access code still protects it, as now) or invited email addresses only.
-4. Open the link the morning of the demo: an app with no visitors for 12 hours sleeps and takes up to a minute to
-   wake.
+4. Open the link the morning of the demo: an app with no visitors for 12 hours sleeps, and the page then shows a
+   button that wakes it.
 
 ## Limits to know
 

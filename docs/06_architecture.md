@@ -150,7 +150,13 @@ Timeouts are real waits: the mock hangs (`MOCK_HANG_SECONDS`) and the executor s
 | Look | Light theme follows the moe.gov.ae service page (logo, gold bar, gold buttons); dark theme for presenting; Arabic page right to left in Noto Kufi Arabic | Familiar to Ministry users; Arabic first-class |
 | Fonts | Bundled in `static/fonts` (SIL Open Font License) | Works with no internet at the venue |
 | Data | JSON and PDF files in `data/synthetic/`, case store in `runtime/` | No database to explain |
-| Online copy | https://moe-equivalency-demo.streamlit.app (access code `moe`): the same code with a hosted model (`docs/09_online_copy.md`) | Quick review with nothing to install |
+| Online copy | https://moe-equivalency-demo.streamlit.app (access code `moe`): the same code with `openai/gpt-oss-120b` on Groq, backup `openai/gpt-oss-20b` (`docs/09_online_copy.md`) | Quick review with nothing to install |
+
+**Scale.** Each session keeps its own case state, and the rules, guard and fixed answers run as plain code, so the
+cost that grows with use is the model. One full parent session (question, documents, payment) uses about 12 model
+calls and 25,000 tokens, measured on the local logs; fixed answers use none. Production adds app instances behind
+the portal, the Ministry's case system in place of the JSON file, and model capacity sized from these figures and the
+expected number of requests. None of this changes the decision path.
 
 ## 9. Security and responsible AI
 

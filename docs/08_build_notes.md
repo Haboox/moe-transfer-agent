@@ -3,6 +3,35 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.19: final check before the recording (23 October)
+
+A full browser walk through the portal (every scenario in both languages, payments, officer decisions, every system
+problem, language switches, reloads, dark mode and phone width) found one real fault and a few small display issues.
+
+* The suggested question "Why does my request need an officer?" was read as a request for a person and answered with
+  the toll-free number; without a model it then got the general service overview. A question about the officer is
+  no longer a request for one (`agent/language.py`), and when a case exists it is answered from the case record,
+  which holds the reason (P-04, `agent/agent.py`), whatever the model makes of it. New tests in English and Arabic,
+  including a model that misreads the question.
+* Staff screen: a case that was never referred showed "cells in red caused the referral" above its evidence table;
+  that note now appears only on referred cases.
+* Journey steps: "Officer decision" was cut to "Officer deci..." on a laptop screen; long step names now wrap, and on
+  a phone the steps wrap onto two rows.
+* R-11 read "0 supporting document(s)."; it now reads "No supporting documents. The maximum is 2."
+* Arabic page: the staff audit trail and the agent trace now say that their technical reasons are recorded in English.
+* A test held a hidden text direction character; it is now written as an escape (`\u202e`), so the source shows
+  exactly what it contains.
+* README and `docs/09_online_copy.md` name both models: `qwen3:8b` locally, `openai/gpt-oss-120b` on Groq online
+  (backup `openai/gpt-oss-20b`).
+
+Local model run (qwen3:8b, version 2.18, started 22 October 23:55): 42 of 42 scenarios passed, 19 guard refusals (16
+from the compromised model, 3 made up document IDs that the model then corrected). No scenario message asks why an
+officer is needed, and the person check gives the same answer as 2.18 for every scenario message, so the 2.19
+changes do not touch what these scenarios test.
+
+Results (no AI, repeatable): 620 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations
+(449 turns, no crash, no problem); browser walk through every section with no problem.
+
 ## Version 2.18: the model never receives the child's name; documents 03, 04 and 05 (22 October)
 
 Found while writing the architecture document and checking each row of its data table against the code: the

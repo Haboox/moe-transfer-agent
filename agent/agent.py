@@ -23,7 +23,7 @@ from .config import LOG_DIR, MOE_SUPPORT_NUMBER, Settings, get_settings
 from .executor import AgentContext, run_tool
 from .facts import (asks_doc_number, clock_reply, doc_number_reply, is_clock_question, is_off_topic, is_several_children,
                     off_topic_reply, several_children_reply)
-from .language import any_grade, asks_for_person, detect_language, stated_grade
+from .language import any_grade, asks_for_person, asks_why_officer, detect_language, stated_grade
 from .llm import OVERRIDE_WORDS, BaseLLM, LLMError
 from .messages import lang_of, low_grade_why, outcome_panel, redirect_message, say, status_message
 from .mocks import OPEN_ID, MockBackend
@@ -306,6 +306,11 @@ class ServiceAgent:
             reply = say("card_silent", lang_of(s)) + (("\n\n" + status_message(s)) if s.case_ref else "")
             problems = ["not_on_card"]
             ctx.audit.log("policy", "card_silent_topic", basis="P-10; card does not cover this topic")
+        elif s.case_ref and asks_why_officer(text) and not added:
+            # P-04: "why does my request need an officer?" is answered from the case record, which holds the reason.
+            # Found in the final browser check: it got the toll-free number, then (no AI) the general service overview.
+            reply, problems = status_message(s), ["outcome_from_record"]
+            ctx.audit.log("policy", "referral_reason_given", basis="P-04; the reason is read from the case record")
         elif self._used_requirements_tool(events_before) or (found and (is_question(text) or intent["intent"] ==
                 "question_about_service")) or (intent["intent"] == "question_about_service" and is_question(text)) or (
                 set(found) & RAISED and not added and not s.is_closed()

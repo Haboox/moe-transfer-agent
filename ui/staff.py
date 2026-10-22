@@ -274,7 +274,8 @@ def _case_detail(store: CaseStore, rec, lang: str) -> None:
         else:
             _decided_box(rec, lang)
         if rec.documents:
-            st.markdown(f"<div class='h5'>{escape(t('case_evidence', lang))}</div>" + _evidence(rec, lang),
+            heading = t("case_evidence" if rec.escalation_reason else "case_evidence_ok", lang)   # red only if referred
+            st.markdown(f"<div class='h5'>{escape(heading)}</div>" + _evidence(rec, lang),
                         unsafe_allow_html=True)
             _documents(rec, lang)
         if rec.escalation_summary:
