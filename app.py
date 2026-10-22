@@ -55,9 +55,14 @@ def _access_gate() -> None:
     ss.setdefault("gate_tries", 0)
     _, mid, _ = st.columns([1, 2, 1])
     with mid:
-        st.markdown("### Equivalency Assistant (Prototype) · مساعد المعادلة (نموذج أولي)")
-        st.caption("Synthetic data only. Enter the access code you were given. "
-                   "بيانات اصطناعية فقط. أدخل رمز الدخول الذي حصلت عليه.")
+        # English and Arabic on their own lines, each in its own direction
+        rtl = "dir='rtl' style='text-align:right;"
+        st.markdown("<h3 style='margin-bottom:.1rem'>Equivalency Assistant (Prototype)</h3>"
+                    f"<div {rtl}font-size:1.2rem;font-weight:600'>مساعد المعادلة (نموذج أولي)</div>"
+                    "<div style='opacity:.7;font-size:.9rem;margin-top:.6rem'>Synthetic data only. Enter the "
+                    "access code you were given.</div>"
+                    f"<div {rtl}opacity:.7;font-size:.9rem;margin-bottom:.8rem'>بيانات اصطناعية فقط. أدخل رمز الدخول "
+                    "الذي حصلت عليه.</div>", unsafe_allow_html=True)
         if ss.gate_tries >= 5:
             st.error("Too many attempts. Close this tab and try again later. محاولات كثيرة، أعد المحاولة لاحقاً.")
             st.stop()

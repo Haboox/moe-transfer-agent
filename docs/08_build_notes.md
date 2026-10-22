@@ -19,6 +19,7 @@ problem, language switches, reloads, dark mode and phone width) found one real f
   a phone the steps wrap onto two rows.
 * R-11 read "0 supporting document(s)."; it now reads "No supporting documents. The maximum is 2."
 * Arabic page: the staff audit trail and the agent trace now say that their technical reasons are recorded in English.
+* Online access page: the English and Arabic lines now sit on their own lines, each in its own direction.
 * A test held a hidden text direction character; it is now written as an escape (`\u202e`), so the source shows
   exactly what it contains.
 * README and `docs/09_online_copy.md` name both models: `qwen3:8b` locally, `openai/gpt-oss-120b` on Groq online
