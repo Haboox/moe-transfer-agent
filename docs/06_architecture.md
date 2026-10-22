@@ -59,7 +59,8 @@ Customer message, typed (+ attached synthetic PDFs or uploaded files)
   |-- 3. ROUTE       P-06 confident Grade 12 -> Grade 12 service; Grade 1 or above 12 -> not covered (no tools)
   |-- 4. ACT LOOP    system prompt rebuilt from the case record + suggested next step
   |                  model picks a tool -> GUARD -> EXECUTOR -> MOCK system -> contract check
-  |                  result (masked, document text labelled untrusted) -> model ... until it replies
+  |                  result (masked: document numbers, and the student's names inside document text;
+  |                  document text labelled untrusted) -> model ... until it replies
   |-- 5. VALIDATE    evaluate_rules -> RuleReport (PASS / FAIL / MISSING / REVIEW per rule)
   |-- 5b. P-13      the model stopped with documents unchecked -> reminded once -> policy runs the standard steps
   |-- 6. SAFETY NET  P-03 / P-07: a case that needs a person reaches one
@@ -149,3 +150,26 @@ Timeouts are real waits: the mock hangs (`MOCK_HANG_SECONDS`) and the executor s
 | Look | Light theme follows the moe.gov.ae service page (logo, gold bar, gold buttons); dark theme for presenting; Arabic page right to left in Noto Kufi Arabic | Familiar to Ministry users; Arabic first-class |
 | Fonts | Bundled in `static/fonts` (SIL Open Font License) | Works with no internet at the venue |
 | Data | JSON and PDF files in `data/synthetic/`, case store in `runtime/` | No database to explain |
+| Online copy | https://moe-equivalency-demo.streamlit.app (access code `moe`): the same code with a hosted model (`docs/09_online_copy.md`) | Quick review with nothing to install |
+
+## 9. Security and responsible AI
+
+Security is set against the OWASP Top 10 for LLM Applications (2025), https://genai.owasp.org/llm-top-10/:
+
+| Risk | How the prototype handles it | Shown by |
+|---|---|---|
+| LLM01 Prompt injection | Message and document text are data, never instructions; override attempts flagged by the model and by code; the guard and the missing approval tool hold even when the model is fooled | S4, S4-ADV, S6-ADV |
+| LLM02 Sensitive information disclosure | The model never gets the child's name (also masked inside certificate text), card data or full document numbers; masking before logs; leak search in every test run and live on screen | all 42 scenarios |
+| LLM05 Improper output handling | Model output is never executed; tool arguments must match strict contracts; replies are checked, then shown with HTML switched off | unit tests; fuzz |
+| LLM06 Excessive agency | Nine tools, none that approves; the guard checks order, grounds and payment; an officer decides; only the parent pays | S6-ADV |
+| LLM07 System prompt leakage | A reply that reveals instructions, tool names or codes is replaced | probe Q10; unit test |
+| LLM09 Misinformation | Outcomes, status and requirements come from the record and the card; topics the card does not cover get a fixed answer; no internet; the clock comes from code | probes; unit tests |
+| LLM10 Unbounded consumption | At most 10 tool steps per message; 3 s per system call; messages of at most 600 characters; the hosted model's limits respected | unit tests |
+| LLM03, LLM04, LLM08 | Exact package versions pinned; no training or fine tuning; no vector store, because the card is a fixed file | requirements file |
+
+Responsible AI is set against the UAE Charter for the Development and Use of Artificial Intelligence (June 2024):
+human oversight (an officer decides every submitted or referred case), safety (guard, contracts, step limit, never
+guess), algorithmic bias (the same rules in Arabic and English, tested in pairs; nationality only from the identity
+record), data privacy (synthetic data, minimum data to the model, masking), transparency (replies say when they come
+from the record or the card; the officer's AI summary is labelled), governance and accountability (every action
+logged with its basis in a numbered, append only trail).

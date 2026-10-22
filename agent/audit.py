@@ -30,6 +30,11 @@ class AuditLog:
         """Names and other values that must never appear in the log."""
         self._known_terms.update(t for t in terms if t)
 
+    @property
+    def known_terms(self) -> set[str]:
+        """The same names, for masking what the model is given (P-14)."""
+        return set(self._known_terms)
+
     def log(self, actor: str, event: str, basis: str = "", **detail: Any) -> dict:
         if actor not in ACTORS:                      # a real check (an assert disappears with python -O)
             raise ValueError(f"unknown actor {actor}")

@@ -12,6 +12,9 @@ Service card [in English](https://moe.gov.ae/en/eservices/servicecard/Pages/Cert
 > **Prototype, synthetic data only.** Every person, document, number, payment and system the agent touches is
 > invented and labelled SYNTHETIC or MOCK. Names are fictional. No real Ministry system is called.
 
+**Try it online:** https://moe-equivalency-demo.streamlit.app (access code `moe`). The same code with a hosted model,
+for quick review with nothing to install (`docs/09_online_copy.md`).
+
 ---
 
 ## Set up and run (about 10 minutes, plus the AI model download)
@@ -65,7 +68,7 @@ Running setup again is always safe: it keeps what is already done.
 | 1. Python | Finds Python 3.12 or newer and creates the project's own environment in `.venv` (nothing is installed system wide) | If no suitable Python is found: "Download uv and Python 3.13 now?" Answer **y**, and a private copy of Python is downloaded for this project only (no admin rights needed) |
 | 2. Packages | Installs the exact tested versions in `requirements.txt` into `.venv` | |
 | 3. Settings | Copies `.env.example` to `.env` (an existing `.env` is kept) | |
-| 4. Tests | Runs the 603 automated tests (no AI needed, about 2 minutes) | |
+| 4. Tests | Runs the 607 automated tests (no AI needed, about 3 minutes) | |
 | 5. AI model | Starts Ollama if it is installed and offers to download the model `qwen3:8b` (about 5 GB) | "Download qwen3:8b now?" If Ollama is missing it offers to open the download page, and to use the portal without AI for now |
 
 ### The AI model
@@ -160,7 +163,7 @@ computer's clock (policy P-17).
 
 | Command (macOS / Linux) | Windows | What it runs | AI needed |
 |---|---|---|---|
-| `bash run_tests.sh` | `run_tests.bat` | All 603 automated tests, about 2 minutes | No |
+| `bash run_tests.sh` | `run_tests.bat` | All 607 automated tests, about 3 minutes | No |
 | `bash run_live_checks.sh` | `run_live_checks.bat` | The 8 main scenarios (S1, S3, S4, S6 in English and Arabic) with the real model | Yes |
 | `bash run_live_checks.sh all` | `run_live_checks.bat all` | All 42 scenarios, 78 chat probes and 56 stress conversations with the real model (a few hours on a small GPU) | Yes |
 
@@ -195,7 +198,7 @@ ADV variants replace the model with a simulated compromised model that obeys the
 rules and reply checks must hold anyway. Every scenario also checks that no sensitive data reaches replies or logs,
 and that every reply is in the parent's language.
 
-### What the 603 tests prove
+### What the 607 tests prove
 
 | File | What it proves |
 |---|---|
@@ -203,7 +206,7 @@ and that every reply is in the parent's language.
 | `test_rules.py` | Every rule, pass and fail paths, outcome order |
 | `test_guard.py` | Unknown tools, bad parameters, wrong order, grounded escalation |
 | `test_tools_and_mocks.py`, `test_data_and_interpret.py` | Contracts, real timeouts, retries, synthetic files, interpretation limits |
-| `test_privacy_and_outputs.py` | Masking, reply checks, staff only decisions |
+| `test_privacy_and_outputs.py` | Masking, reply checks, staff only decisions; the model never receives the child's name, even inside certificate text |
 | `test_scenarios.py` | All 42 scenarios from start to finish in both languages, plus model outage and loops |
 | `test_bilingual_and_payments.py` | Arabic and English parity: reply language by code, Arabic grades and names, Arabic card word for word, Arabic reply checks, translations into Arabic, extreme grades, both document editions describe the same facts; no demo wording, rule IDs or child's name in what the parent sees; GCC nationals need no visa; the payment window (test cards only, card details never logged) |
 | `test_stress.py`, `test_fuzz.py` | The 56 stress conversations and 120 random conversations: greetings, thanks, emoji, typed ID numbers, dialects, mixed languages, injections, authority claims, wrong grades, every new case; each reply checked for language, internal codes, demo wording, promises and leaks |
@@ -245,7 +248,7 @@ data/synthetic/   personas.json, documents.json and the synthetic PDFs, English 
 docs/             the documents listed above
 scripts/          start_ai.py, run_scenarios.py, probe_chat.py, stress_test.py, fuzz_chat.py, check_llm.py,
                   generate_synthetic_data.py
-tests/            603 tests
+tests/            607 tests
 logs/, runtime/   audit logs and the mock case store, created at runtime
 .env.example      settings (copied to .env by setup); .env is never shared because it can hold an API key
 ```

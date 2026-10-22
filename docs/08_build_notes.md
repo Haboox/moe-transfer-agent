@@ -3,6 +3,24 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.18: the model never receives the child's name; documents 03, 04 and 05 (22 October)
+
+Found while writing the architecture document and checking each row of its data table against the code: the
+certificate text passed to the model as data (first 400 characters, labelled untrusted) still held the student's
+name, for example "Student Arin Velanthar". The audit log copy was masked; the model's copy was not, which broke P-14.
+
+* `agent/tools.py`: the certificate text given to the model is masked with the same known names as the log (Latin
+  and Arabic); `agent/audit.py` exposes them as `known_terms`.
+* New test `test_the_model_never_receives_the_childs_name` (English and Arabic editions, two applicants) records
+  everything the model is sent during a full journey and checks no name appears; it fails on version 2.17.
+* Deliverables 03 Architecture, 04 Tests and Results and 05 90 Day Plan rebuilt: a codes key at the start of each,
+  figures with legends, simpler tables, OWASP Top 10 for LLM Applications (2025) and UAE AI Charter mappings, and a
+  90 day plan grounded in the Cabinet decision of 18 May 2026, the National Cloud Security Policy, UAE Pass onboarding
+  and the UAE Design System (sources listed in `docs/07_90_day_plan.md`).
+
+Results (no AI, repeatable): 607 tests, scenarios 42/42, chat probes 78/78, stress 56/56, fuzz 120 conversations
+(449 turns, no crash, no problem).
+
 ## Version 2.17: a request that reaches an officer because a system was down is paid for first (22 October)
 
 Found in the demo: with the document verification service returning bad data every time, the case went straight to
@@ -131,7 +149,7 @@ Results (no AI, repeatable): 531 tests, scenarios 42/42, chat probes 78/78, stre
 
 ## Version 2.13: document viewer, nationality picks the documents, new staff portal; live break-testing (21 October, night)
 
-Asked by Wisam, all built and deployed online first:
+Asked for, all built and deployed online first:
 
 * **Built-in document viewer:** every document can be opened on the page (View), in the parent portal (attached files
   and the library) and the staff portal (every document of a case); download stays. PDF pages are drawn as images
@@ -176,7 +194,7 @@ Hosted model replies took 2 to 5 seconds (up to about 30 when the free tier's pe
 
 Found and fixed:
 
-* **Decision D-06, every request is paid for (Wisam's call):** an officer approved an escalated case and the AED 50
+* **Decision D-06, every request is paid for:** an officer approved an escalated case and the AED 50
   was never collected; assumption A-09 said the fee was "handled after review", but nothing did it. Now a request
   the rules send to an officer is submitted like any other: payment window, AED 50, then the officer, whatever the
   officer decides. Only a case sent to an officer because the identity or verification system was down goes unpaid
@@ -243,7 +261,7 @@ even on a computer with no Python and no AI model.
 
 ## Version 2.9: the Grade 1 to Grade 2 case (21 October, afternoon)
 
-Found by Wisam: "my son finished grade 1 and now moving to grade 2" got "this service covers Grades 2 to 11 only",
+Found in the portal: "my son finished grade 1 and now moving to grade 2" got "this service covers Grades 2 to 11 only",
 and the follow-up "but he is going into grade 2 and this service says grade 2-11?" got the same sentence again.
 
 **How it works and why (A-15):** the service gives equivalency to a certificate the student **completed** abroad;
@@ -275,7 +293,7 @@ Results (no AI, repeatable): 479 tests, scenarios 42/42, chat probes 78/78, stre
 
 ## Version 2.8: no invented facts, instant fixed answers (21 October, afternoon)
 
-Found by Wisam in the live portal: "hi whats the time here?" got "The current time in the UAE is 10:45 AM", which was
+Found in the live portal: "hi whats the time here?" got "The current time in the UAE is 10:45 AM", which was
 wrong. The model has no clock and no internet, so it made the time up and nothing stopped it.
 
 **Decision (P-17): trusted sources only, no open internet.** The agent may state only what comes from the service
@@ -502,7 +520,7 @@ live reports (scenarios, probes, stress).
 * Automated tests: 316 of 316.
 * Scenarios: **30/30**. Chat probes: **63/64**; the miss (Q29) was the model answering "does a Kuwaiti need a visa?"
   in its own words ("I cannot confirm visa requirements") instead of the card. Fixed by P-15 below.
-* Portal tested on the PC in the Claude browser pane: English and Arabic journeys, declined card then Apple Pay,
+* Portal tested on the PC in a browser: English and Arabic journeys, declined card then Apple Pay,
   escalation, officer approval, GCC case. Found: in a narrow window the header clipped labels ("English" showed as
   "h") and the page scrolled sideways. Fixed (header rows wrap below 1100 px; the gold bar no longer widens the page).
 

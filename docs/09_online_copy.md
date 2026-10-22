@@ -1,8 +1,9 @@
 # 09 The online copy (plan B)
 
-A second way to show the prototype if the demo computer fails: the same portal, hosted on Streamlit Community
-Cloud (free), reached through a private link. The local computer with its own model stays the main version, and
-the recorded walkthrough is the last fallback.
+The same portal, hosted on Streamlit Community Cloud (free) at https://moe-equivalency-demo.streamlit.app (access
+code `moe`). It is the quickest way to review and demonstrate the prototype: nothing to install, and replies in
+seconds. The local computer with its own model is the version where nothing leaves the machine, and the recorded
+walkthrough is the last fallback.
 
 ## What runs where
 
@@ -12,7 +13,7 @@ the recorded walkthrough is the last fallback.
 | Language model | `qwen3:8b` on this computer (Ollama) | A hosted model behind the OpenAI style API (`LLM_PROVIDER=hosted`): Groq by default, Google Gemini as the alternative |
 | Settings | `.env` | The app's **Secrets** box on Streamlit (never in the repository) |
 | Data | Synthetic only | Synthetic only |
-| Who can open it | This computer only (`--server.address localhost`) | Invited viewers only (Streamlit private app, sign in by email), plus an access code |
+| Who can open it | This computer only (`--server.address localhost`) | Anyone with the link https://moe-equivalency-demo.streamlit.app and the access code |
 
 Everything decided by code behaves the same in both: the rules, the guard, escalation, the payment window, the
 staff decisions, the fixed answers (time, the phone number for a person, questions outside the service), and the
@@ -45,7 +46,7 @@ a Gemini model name in `HOSTED_MODEL`, with a Gemini API key.
 1. Push this folder to a **private** GitHub repository (without `.env`; `.gitignore` already leaves it out).
 2. On https://share.streamlit.io, sign in with GitHub, choose **Create app**, pick the repository, branch `main`
    and main file `app.py`. Under **Advanced settings** choose Python 3.13 and paste the secrets above.
-3. Once it runs, **Share** the app with the email addresses that may view it.
+3. Once it runs, set who may view it under **Share**: public (the access code still protects it, as now) or invited email addresses only.
 4. Open the link the morning of the demo: an app with no visitors for 12 hours sleeps and takes up to a minute to
    wake.
 

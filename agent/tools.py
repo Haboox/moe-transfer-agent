@@ -12,7 +12,7 @@ an escalated case. That function is in agent/human_review.py and is NOT in this 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Literal, Optional, Type
+from typing import Any, Callable, Iterable, Literal, Optional, Type
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -120,7 +120,7 @@ def _list_uploads(ctx: AgentContext, _: NoArgs) -> dict:
         for u in s.uploads]}
 
 
-def _summarise_verification(v: VerificationResult) -> dict:
+def _summarise_verification(v: VerificationResult, known_names: Iterable[str] = ()) -> dict:
     out: dict[str, Any] = {"doc_id": v.doc_id, "type": v.doc_type, "authenticity": v.authenticity}
     if v.number:
         out["number"] = mask_number(v.number)
@@ -132,7 +132,8 @@ def _summarise_verification(v: VerificationResult) -> dict:
                    attestations=v.attestations.model_dump() if v.attestations else None,
                    attested_by=v.attested_by)
         # Untrusted content (policy P-05): passed as data, clearly labelled, never as instructions.
-        out["document_text_UNTRUSTED_DATA"] = redact_text(v.extracted_text[:400])
+        # The student's names are masked here as in the log, so the model never gets the child's name (P-14).
+        out["document_text_UNTRUSTED_DATA"] = redact_text(v.extracted_text[:400], known_names)
     if v.translates_doc_id:
         out["translates_doc_id"] = v.translates_doc_id
     return out
@@ -150,7 +151,7 @@ def _verify(ctx: AgentContext, args: VerifyArgs) -> dict:
                 VerificationResult, basis="Card: Service Conditions (attestation)")
             s.verifications[doc_id] = v
             s.failed_verifications.pop(doc_id, None)
-            results.append(_summarise_verification(v))
+            results.append(_summarise_verification(v, ctx.audit.known_terms))
             ctx.add_trace(f"verify_document({doc_id}) -> {v.authenticity}", "mock tool (document verification)")
             if instructions_in_document(v.extracted_text):
                 # P-05, shown and logged: text addressed to the AI inside a document is data, never an instruction

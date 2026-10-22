@@ -198,3 +198,33 @@ def test_small_talk_and_fixed_answers_never_call_the_model(make_agent, msg):
             raise AssertionError("the model was called")
     r = make_agent("SYN-P01", llm=NoCalls(), ui_lang="ar" if any("؀" <= c <= "ۿ" for c in msg) else "en").handle_turn(msg)
     assert r.reply
+
+
+@_pt.mark.parametrize("persona,edition", [("SYN-P01", "en"), ("SYN-P03", "en"), ("SYN-P01", "ar"), ("SYN-P03", "ar")])
+def test_the_model_never_receives_the_childs_name(make_agent, persona, edition):
+    """P-14: certificate text reaches the model as data with the student's names masked (Latin and Arabic),
+    the same way as the log. Found while writing the architecture document: only the log copy was masked."""
+    import json as _json
+
+    seen: list[str] = []
+
+    class Recorder(ScriptedLLM):
+        def interpret(self, system, user_text, schema):
+            seen.append(system + user_text)
+            return super().interpret(system, user_text, schema)
+
+        def chat(self, system, messages, tools):
+            seen.append(system + _json.dumps(messages, ensure_ascii=False, default=str))
+            return super().chat(system, messages, tools)
+
+    a = make_agent(persona, llm=Recorder(), ui_lang=edition)
+    docs = [d["doc_id"] for d in a.backend.persona_documents(persona, edition)]
+    a.handle_turn("مرحبا، أرفقت المستندات" if edition == "ar" else "Hello, documents attached.", docs)
+    student = a.backend.personas[persona]["student"]
+    names = [n for n in (student["given_name"], student["family_name"], student.get("given_name_ar"),
+                         student.get("family_name_ar")) if n]
+    everything = "\n".join(seen)
+    assert "document_text_UNTRUSTED_DATA" in everything          # the certificate text did reach the model
+    assert "[NAME]" in everything                                # with the names masked
+    for n in names:
+        assert n not in everything, n
