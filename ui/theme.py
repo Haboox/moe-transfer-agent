@@ -91,6 +91,13 @@ header[data-testid="stHeader"] {{ background: transparent; height: 0; }}
                border-radius:10px; padding:7px 12px; font-size:.82rem; color:var(--text); }}
 .demo-ribbon .tag {{ background:var(--gold); color:#fff; font-weight:700; letter-spacing:.06em; border-radius:6px;
                     padding:2px 8px; font-size:.72rem; white-space:nowrap; }}
+/* the Demo controls button keeps its full label on laptop widths (it was cut to "Demo cont..." near 1100 px) */
+@media (min-width: 1101px) {{
+  [data-testid="stHorizontalBlock"]:has(.demo-ribbon) > [data-testid="stColumn"]:first-child {{ flex:1 1 0 !important;
+      min-width:0 !important; }}
+  [data-testid="stHorizontalBlock"]:has(.demo-ribbon) > [data-testid="stColumn"]:last-child {{ flex:0 0 11rem !important;
+      min-width:11rem !important; }}
+}}
 .crumbs {{ font-size:.86rem; color:var(--muted); margin:18px 0 6px; }}
 .crumbs a {{ color:var(--gold); text-decoration:underline; }}
 .crumbs .chev {{ margin:0 8px; }}

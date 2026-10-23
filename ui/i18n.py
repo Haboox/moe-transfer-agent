@@ -404,6 +404,7 @@ S = {
     "case_lang": ("Parent's language", "لغة ولي الأمر"),
     "case_rules": ("Rules when the case was created", "نتيجة الشروط عند إنشاء الطلب"),
     "case_why": ("Why it needs an officer", "سبب الإحالة إلى موظف"),
+    "why_check": ("Check", "الفحص"),
     "case_docs": ("Documents checked", "المستندات التي تم فحصها"),
     "case_evidence": ("What the documents show (cells in red caused the referral)",
                       "ما تُظهره المستندات (الخانات باللون الأحمر هي سبب الإحالة)"),

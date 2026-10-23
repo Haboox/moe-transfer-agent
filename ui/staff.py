@@ -84,10 +84,12 @@ def _why(rec, lang: str) -> str:
     """Why the case needs a person, in the rules' own words (staff language)."""
     ar = lang == "ar"
     if rec.problems:
+        # what is wrong first, in the rule's words; then which check it is (a rule title names what is checked,
+        # so "Certificate names match the passport" alone read as if they did)
         items = "".join(
-            f"<li><b>{escape(p.get('title_ar') if ar else p.get('title'))}</b> "
-            f"<span class='muted'>({escape(t('rs_' + p['status'], lang))})</span><br>"
-            f"{escape((p.get('detail_ar') or p.get('detail')) if ar else p.get('detail'))}</li>"
+            f"<li><b>{escape((p.get('detail_ar') or p.get('detail')) if ar else p.get('detail'))}</b><br>"
+            f"<span class='muted'>{escape(t('why_check', lang))}: {escape(p.get('rule_id', ''))} "
+            f"{escape(p.get('title_ar') if ar else p.get('title'))} · {escape(t('rs_' + p['status'], lang))}</span></li>"
             for p in rec.problems)
         return f"<ul class='why'>{items}</ul>"
     return f"<ul class='why'><li>{escape(reason(rec.escalation_reason, lang))}</li></ul>"
@@ -166,6 +168,8 @@ def _evidence(rec, lang: str) -> str:
 
 
 def _why_short(c, lang: str) -> str:
+    if c.escalation_reason:
+        return reason(c.escalation_reason, lang)     # the same words the parent sees ("Name differs between ...")
     if c.problems:
         return ("؛ " if lang == "ar" else "; ").join((p.get("title_ar") if lang == "ar" else p["title"]) or p["title"]
                                                    for p in c.problems)

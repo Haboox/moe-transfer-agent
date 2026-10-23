@@ -20,6 +20,10 @@ problem, language switches, reloads, dark mode and phone width) found one real f
 * R-11 read "0 supporting document(s)."; it now reads "No supporting documents. The maximum is 2."
 * Arabic page: the staff audit trail and the agent trace now say that their technical reasons are recorded in English.
 * Online access page: the English and Arabic lines now sit on their own lines, each in its own direction.
+* Staff screen: the referral box now leads with what is wrong ("Name on Grade 4 certificate does not match the
+  passport; a person must review this.") and then names the check (R-14), and the case list shows the same reason the
+  parent sees. A rule title such as "Certificate names match the passport" on its own read as if they did.
+* Header: "Demo controls" kept its full label on laptop widths (it was cut to "Demo cont..." near 1100 pixels).
 * A test held a hidden text direction character; it is now written as an escape (`\u202e`), so the source shows
   exactly what it contains.
 * README and `docs/09_online_copy.md` name both models: `qwen3:8b` locally, `openai/gpt-oss-120b` on Groq online
