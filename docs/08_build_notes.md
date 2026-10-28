@@ -5,6 +5,10 @@ Use it to prepare the recording and the in-person panel. Newest work is at the t
 
 ## Version 2.20: document labels match the documents (28 October)
 
+* The payment window opens only when the parent presses **Pay AED 50**; it no longer opens by itself.
+* In the staff portal the decision note is optional: Approve or Reject works with the box empty. A staff ID is still
+  required, every decision is still made once and logged.
+
 * In the English edition, the certificates from Egypt, Oman, Jordan, Kuwait and Morocco were rendered in English but
   recorded as Arabic originals, so the portal listed them as "Grade 4 certificate (Arabic)" while the file on screen was
   in English. The English edition now records them as English certificates, and every certificate states its own

@@ -418,9 +418,7 @@ def _input_area(agent: ServiceAgent, lang: str) -> bool:
     """Payment button and message box. Returns True when a message was sent (a rerun follows)."""
     ss = st.session_state
     if agent.state.status == CaseStatus.AWAITING_PAYMENT and not turn_flags().get("pending"):
-        if not ss.get("pay_prompted"):
-            ss.pay_prompted = True
-            payment_dialog(lang)                     # opens once by itself; the button reopens it
+        # the payment window opens only when the parent presses Pay (never by itself)
         if st.button(t("pay_now", lang), type="primary", key="pay_btn_chat", icon=":material/credit_card:"):
             payment_dialog(lang)
 

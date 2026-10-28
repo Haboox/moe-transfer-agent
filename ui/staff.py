@@ -230,7 +230,8 @@ def _decided_box(rec, lang: str) -> None:
     ok = rec.status == CaseStatus.HUMAN_APPROVED
     st.markdown(f"<div class='callout {'ok' if ok else 'bad'}'><b>{escape(t('st_' + rec.status.value, lang))}</b>"
                 f"<span class='muted'> · {escape(rec.reviewer_id or '')} · {escape(when)}</span>"
-                f"<div>{escape(rec.reviewer_note or '')}</div></div>", unsafe_allow_html=True)
+                + (f"<div>{escape(rec.reviewer_note)}</div>" if rec.reviewer_note else "") + "</div>",
+                unsafe_allow_html=True)
 
 
 def _decision_form(store: CaseStore, rec, lang: str) -> None:

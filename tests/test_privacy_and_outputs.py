@@ -69,9 +69,9 @@ def test_non_staff_cannot_decide(backend, tmp_path, reviewer):
         decide(backend.cases, ref, reviewer, "approve", "ok", tmp_path)
 
 
-def test_decision_requires_note(backend, tmp_path):
-    with pytest.raises(ReviewError):
-        decide(backend.cases, _pending_case(backend), "STAFF-A12", "approve", "  ", tmp_path)
+def test_decision_note_is_optional(backend, tmp_path):
+    rec = decide(backend.cases, _pending_case(backend), "STAFF-A12", "approve", "  ", tmp_path)
+    assert rec.status.value == "HUMAN_APPROVED" and rec.reviewer_note == ""
 
 
 def test_an_officer_issues_the_decision_on_a_submitted_case_once(backend, tmp_path):

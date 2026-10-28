@@ -37,8 +37,6 @@ def decide(store: CaseStore, case_ref: str, reviewer_id: str, decision: str, not
         raise ReviewError("reviewer ID must look like STAFF-XXXX (synthetic staff accounts only)", "staff_id")
     if decision not in ("approve", "reject"):
         raise ReviewError("decision must be 'approve' or 'reject'")
-    if not (note or "").strip():
-        raise ReviewError("a note explaining the decision is required", "note")
     rec = store.get(case_ref)
     if rec is None:
         raise ReviewError(f"case {case_ref} not found")
@@ -48,8 +46,8 @@ def decide(store: CaseStore, case_ref: str, reviewer_id: str, decision: str, not
              else "P-16 official equivalency decision by an officer (all automated checks passed)")
     new_status = CaseStatus.HUMAN_APPROVED if decision == "approve" else CaseStatus.HUMAN_REJECTED
     updated = store.update(case_ref, status=new_status, reviewer_id=reviewer_id,
-                           reviewer_note=redact_text(note.strip()))
+                           reviewer_note=redact_text((note or "").strip()))
     AuditLog(rec.session_id, log_dir).log("human", "human_decision", basis=basis,
                                           case_ref=case_ref, reviewer_id=reviewer_id, previous=rec.status.value,
-                                          decision=decision, note=note.strip())
+                                          decision=decision, note=(note or "").strip())
     return updated
