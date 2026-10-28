@@ -3,7 +3,7 @@
 Every applicant (persona) is one test situation with ONE set of facts: the same student, school, country,
 grades, dates, subjects, marks and stamps in both editions. Only the language of the documents changes:
 
-  English edition ("en"): the documents in English (an Arabic or French original is shown with English labels)
+  English edition ("en"): the documents in English (French and German originals stay in their language)
   Arabic edition  ("ar"): the same documents in Arabic, identity documents with Arabic and Latin names;
                           French originals stay French, with legal translations INTO ARABIC
                           (the card accepts English or Arabic, or a legal translation)
@@ -53,7 +53,7 @@ NATIONALITY_AR = {"India": "الهند", "Egypt": "مصر", "Oman": "عُمان"
 # Each persona = one test situation. Names are fictional (invented surnames that belong to no real person).
 # Every fact is written ONCE and shared by both editions: the same school, country, grades, dates, subjects,
 # marks and stamps. Pairs are (English, Arabic). The editions differ only in the language of the documents:
-#   "en": the document as issued (English, or an Arabic or French original shown with English labels)
+#   "en": the documents in English (French and German originals stay in their language)
 #   "ar": the same document in Arabic; French originals stay French, with legal translations into Arabic
 PERSONAS = [
     dict(pid="SYN-P01", nationality="India", cc="IND", original="English",
@@ -515,9 +515,9 @@ def build():
                                             ("Valid until", eexp)], []))
 
             # ---- certificates (last two years): the same facts in both editions
-            # Language of the certificate in this edition: French originals stay French; otherwise the edition's language
-            # (the English edition keeps the real original language, e.g. an Egyptian certificate is an Arabic original).
-            cert_lang = p["original"] if french else ("Arabic" if rtl else p["original"])
+            # Language of the certificate in this edition: French and German originals stay in their language; otherwise
+            # the edition's language, so what the page says always matches what the document shows.
+            cert_lang = p["original"] if french else ("Arabic" if rtl else "English")
             arabic_cert = rtl and not french
             school = p["school"][k]
             for g, (labels, year, issued_en) in sorted(p["grades"].items(), reverse=True):
@@ -550,7 +550,7 @@ def build():
                             f"Result: {result}. {injected}").strip()
                     rows = [("Student", holder), ("Grade", label), ("Academic year", year), ("Date issued", issued),
                             ("Result", result)]
-                    subtitle = f"{school}  |  {p['country'][0]}  |  Language of original: {cert_lang}"
+                    subtitle = f"{school}  |  {p['country'][0]}  |  Language: {cert_lang}"
                 photo = g in p.get("image_cert", set())     # sent as a phone photo instead of a PDF (R-10)
                 add(f"{pre}-CERT-G{g}", "school_certificate", f"grade_{g}_certificate.{'jpg' if photo else 'pdf'}",
                     {**names, "grade": g, "grade_label": label, "academic_year": year,

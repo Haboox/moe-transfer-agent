@@ -3,6 +3,14 @@
 A running record of what was built, changed and found, with the reason for each decision.
 Use it to prepare the recording and the in-person panel. Newest work is at the top of each section.
 
+## Version 2.20: document labels match the documents (28 October)
+
+* In the English edition, the certificates from Egypt, Oman, Jordan, Kuwait and Morocco were rendered in English but
+  recorded as Arabic originals, so the portal listed them as "Grade 4 certificate (Arabic)" while the file on screen was
+  in English. The English edition now records them as English certificates, and every certificate states its own
+  language ("Language: English"). French and German originals keep their language in both editions. The rules give
+  the same results as before: Arabic and English certificates both need no translation (R-06).
+
 ## Version 2.19: final check before the recording (23 October)
 
 A full browser walk through the portal (every scenario in both languages, payments, officer decisions, every system
