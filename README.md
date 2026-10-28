@@ -12,7 +12,7 @@ Service card [in English](https://moe.gov.ae/en/eservices/servicecard/Pages/Cert
 > **Prototype, synthetic data only.** Every person, document, number, payment and system the agent touches is
 > invented and labelled SYNTHETIC or MOCK. Names are fictional. No real Ministry system is called.
 
-**Try it online:** https://moe-equivalency-demo.streamlit.app (access code `moe`). The same code with a hosted model,
+**Try it online:** https://moe-equivalency-demo.streamlit.app. The same code with a hosted model,
 `openai/gpt-oss-120b` on Groq (backup `openai/gpt-oss-20b`), for quick review with nothing to install
 (`docs/09_online_copy.md`). If the page says the app is asleep (no visitors for 12 hours), press its button to wake
 it. On a computer the agent uses `qwen3:8b` through Ollama, so nothing leaves the machine.
